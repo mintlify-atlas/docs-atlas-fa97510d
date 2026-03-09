@@ -1,0 +1,143 @@
+{
+  "projectType": "saas",
+  "projectName": "Staxiq",
+  "projectDescription": "AI-powered Bitcoin DeFi aggregator built natively on the Stacks blockchain for yield optimization and portfolio management.",
+  "theme": "aspen",
+  "primaryColor": "#F7931A",
+  "lightColor": "#3B82F6",
+  "darkColor": "#2563EB",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "wallet-setup"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/portfolio-tracking",
+              "features/ai-copilot",
+              "features/yield-calculator",
+              "features/stacking-tracker",
+              "features/health-score",
+              "features/protocol-comparison"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/connecting-wallet",
+              "guides/analyzing-portfolio",
+              "guides/using-ai-copilot",
+              "guides/comparing-protocols",
+              "guides/understanding-risk"
+            ]
+          },
+          {
+            "group": "Protocols",
+            "pages": [
+              "protocols/overview",
+              "protocols/zest",
+              "protocols/alex",
+              "protocols/bitflow",
+              "protocols/hermetica",
+              "protocols/stackingdao",
+              "protocols/velar",
+              "protocols/granite"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Smart Contracts",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "contracts/introduction",
+              "contracts/architecture"
+            ]
+          },
+          {
+            "group": "User Profile Contract",
+            "pages": [
+              "contracts/user-profile/overview",
+              "contracts/user-profile/functions",
+              "contracts/user-profile/integration"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "contracts/deployment",
+              "contracts/testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/ai-service",
+              "api/contract-service",
+              "api/stacks-api",
+              "api/protocol-data"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-wallet",
+              "api/hooks/use-ai-advisor",
+              "api/hooks/use-portfolio",
+              "api/hooks/use-protocols"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time portfolio tracking for STX and sBTC balances",
+    "AI-powered DeFi strategy recommendations with personalized risk profiling",
+    "Yield calculator for simulating returns across Stacks DeFi protocols",
+    "Stacking position management and reward tracking",
+    "Portfolio health score based on diversification and risk analysis",
+    "Protocol comparison tool with APY, TVL, and risk metrics",
+    "On-chain user profile and strategy history via Clarity smart contracts",
+    "Non-custodial wallet integration with Leather and Xverse"
+  ],
+  "publicApiSurface": [
+    "getAIStrategy() - Generate personalized DeFi strategies",
+    "saveRiskProfile() - Save user risk profile on-chain",
+    "getUserProfile() - Retrieve user profile from blockchain",
+    "anchorStrategy() - Anchor AI strategy recommendation on-chain",
+    "getStrategyCount() - Get total strategies for user",
+    "useWallet() - React hook for wallet connection",
+    "useAIAdvisor() - React hook for AI strategy generation",
+    "usePortfolio() - React hook for portfolio data",
+    "useProtocols() - React hook for protocol information",
+    "PROTOCOLS - Array of supported DeFi protocols",
+    "set-risk-profile - Clarity contract function",
+    "save-strategy - Clarity contract function",
+    "get-user-profile - Clarity read-only function",
+    "get-strategy - Clarity read-only function"
+  ]
+}
