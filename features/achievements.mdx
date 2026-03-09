@@ -1,0 +1,246 @@
+---
+title: 'Achievements System'
+description: 'Gamification and badge collection system for Staxiq users'
+icon: 'trophy'
+---
+
+## Overview
+
+Staxiq features a comprehensive achievements system that rewards users for exploring the platform, connecting their wallets, and growing their Bitcoin DeFi portfolios. Users can earn up to **12 unique badges** by completing various activities.
+
+## How It Works
+
+Achievements are automatically tracked based on user activity. Each badge has specific unlock conditions and is displayed with a unique icon, color, and description.
+
+<Frame>
+  <img src="/images/achievements.png" alt="Achievements Dashboard" />
+</Frame>
+
+## Badge Categories
+
+### Getting Started
+
+<Card title="Bitcoin Pioneer" icon="link" color="#F7931A">
+  **Unlock:** Connect your Stacks wallet for the first time  
+  **Icon:** 🔗  
+  **Description:** Welcome to Bitcoin DeFi!
+</Card>
+
+<Card title="AI Strategist" icon="robot" color="#3B82F6">
+  **Unlock:** Generate your first AI DeFi strategy  
+  **Icon:** 🤖  
+  **Description:** Let AI optimize your portfolio
+</Card>
+
+### On-Chain Activity
+
+<Card title="On-Chain Thinker" icon="link" color="#F7931A">
+  **Unlock:** Anchor a strategy on Bitcoin via Stacks  
+  **Icon:** ⛓️  
+  **Description:** Your strategies are secured by Bitcoin
+</Card>
+
+<Card title="Bitcoin Maximizer" icon="bitcoin" color="#F7931A">
+  **Unlock:** Hold sBTC in your wallet  
+  **Icon:** ₿  
+  **Description:** True Bitcoin DeFi with sBTC
+</Card>
+
+### Platform Exploration
+
+<CardGroup cols={2}>
+  <Card title="DeFi Explorer" icon="compass" color="#22c55e">
+    **Unlock:** Visit all 5 sections of Staxiq  
+    **Icon:** 🧭
+  </Card>
+  
+  <Card title="Yield Hunter" icon="chart-line" color="#8b5cf6">
+    **Unlock:** Use the Yield Calculator  
+    **Icon:** 📈
+  </Card>
+  
+  <Card title="Stacker" icon="layer-group" color="#3B82F6">
+    **Unlock:** Check your Stacking Tracker  
+    **Icon:** 🥩
+  </Card>
+  
+  <Card title="Health Conscious" icon="heart-pulse" color="#22c55e">
+    **Unlock:** Check your Wallet Health Score  
+    **Icon:** 💊
+  </Card>
+  
+  <Card title="DeFi Analyst" icon="microscope" color="#f59e0b">
+    **Unlock:** Use the Protocol Comparison table  
+    **Icon:** 🔬
+  </Card>
+</CardGroup>
+
+### Risk Management
+
+<Card title="Risk Manager" icon="shield-check" color="#22c55e">
+  **Unlock:** Select Conservative risk profile  
+  **Icon:** 🛡️  
+  **Description:** Safety first approach to DeFi
+</Card>
+
+### Portfolio Milestones
+
+<Card title="Century Club" icon="dollar-sign" color="#22c55e">
+  **Unlock:** Portfolio value exceeds $100  
+  **Icon:** 💵  
+  **Description:** Your DeFi journey begins!
+</Card>
+
+### Master Badge
+
+<Card title="Power User" icon="bolt" color="#F7931A">
+  **Unlock:** Earn 5 or more badges  
+  **Icon:** ⚡  
+  **Description:** True Staxiq power user
+</Card>
+
+## Complete Badge List
+
+Here's the full breakdown of all 12 achievements:
+
+| Badge | Icon | Condition | Color |
+|-------|------|-----------|-------|
+| **Bitcoin Pioneer** | 🔗 | Connected wallet | #F7931A |
+| **AI Strategist** | 🤖 | Generated ≥1 strategy | #3B82F6 |
+| **On-Chain Thinker** | ⛓️ | Anchored ≥1 strategy | #F7931A |
+| **DeFi Explorer** | 🧭 | Visited ≥5 pages | #22c55e |
+| **Bitcoin Maximizer** | ₿ | Holding sBTC | #F7931A |
+| **Risk Manager** | 🛡️ | Conservative profile | #22c55e |
+| **Yield Hunter** | 📈 | Used calculator | #8b5cf6 |
+| **Stacker** | 🥩 | Used stacking tracker | #3B82F6|
+| **Health Conscious** | 💊 | Checked health score | #22c55e |
+| **DeFi Analyst** | 🔬 | Used comparison tool | #f59e0b |
+| **Century Club** | 💵 | Portfolio ≥ $100 | #22c55e |
+| **Power User** | ⚡ | Earned ≥5 badges | #F7931A |
+
+## User Interface
+
+### Progress Tracking
+
+The Achievements page displays:
+
+- **Collection Progress:** Visual progress bar showing X/12 badges earned
+- **Percentage Complete:** Real-time completion percentage
+- **Earned Badges:** Full-color cards with glowing effects
+- **Locked Badges:** Grayscale cards showing what's still available
+
+### Visual Design
+
+Earned badges feature:
+- ✨ Brand color theming with glow effects
+- 🎨 Gradient borders matching badge color
+- 🔆 Hover animations (scale up on mouse over)
+- 📱 Responsive grid layout (2 cols mobile, 4 cols desktop)
+
+Locked badges appear:
+- ⚫ Grayscale with reduced opacity (50%)
+- 🔒 Still visible to show what can be earned
+- 💭 Description hints at how to unlock
+
+## Technical Implementation
+
+### Achievement Conditions
+
+Each badge has a JavaScript condition function:
+
+```javascript
+{
+  id: 'bitcoin_maximizer',
+  icon: '₿',
+  title: 'Bitcoin Maximizer',
+  description: 'Holding sBTC in your wallet',
+  color: '#F7931A',
+  condition: (data) => parseFloat(data.sbtcBalance) > 0,
+}
+```
+
+### Data Tracking
+
+User activity is tracked via a `userData` object:
+
+```javascript
+const userData = {
+  connected: true,              // Wallet connection status
+  strategyCount: 3,             // Number of strategies generated
+  pagesVisited: 5,              // Unique pages visited
+  sbtcBalance: '0.0000',        // sBTC balance in wallet
+  riskProfile: 'Balanced',      // Selected risk level
+  usedCalculator: true,         // Used yield calculator
+  usedStacking: true,           // Used stacking tracker
+  usedHealth: true,             // Checked wallet health
+  usedCompare: true,            // Used comparison table
+  totalUSD: 128.95,             // Total portfolio value
+};
+```
+
+### Badge Calculation
+
+Achievements are calculated dynamically:
+
+```javascript
+const earned = ALL_BADGES.filter(b => b.condition({
+  ...userData,
+  badgeCount: ALL_BADGES.filter(b2 => b2.condition(userData)).length,
+}));
+
+const locked = ALL_BADGES.filter(b => !b.condition({
+  ...userData,
+  badgeCount: earned.length,
+}));
+```
+
+<Note>
+  The `badgeCount` is recursively calculated to properly unlock the "Power User" badge when 5+ badges are earned.
+</Note>
+
+## Theme Support
+
+The achievements page adapts to Staxiq's light/dark theme:
+
+### Dark Theme
+- Background: `#0d1117`
+- Cards: `#141c2e`
+- Borders: `#1e2d4a`
+- Text: `#f0f4ff`
+
+### Light Theme
+- Background: `#ffffff`
+- Cards: `#f8faff`
+- Borders: `#dde5f5`
+- Text: `#0a0e1a`
+
+## Future Enhancements
+
+<CardGroup cols={2}>
+  <Card title="Social Sharing" icon="share-nodes">
+    Share earned badges on Twitter/X with custom graphics
+  </Card>
+  
+  <Card title="Leaderboards" icon="ranking-star">
+    Global and friend-based achievement leaderboards
+  </Card>
+  
+  <Card title="Rare Badges" icon="gem">
+    Limited-time or special event badges
+  </Card>
+  
+  <Card title="NFT Integration" icon="image">
+    Mint achievement badges as Stacks NFTs
+  </Card>
+</CardGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Portfolio Dashboard" icon="wallet" href="/features/portfolio-tracking">
+    Track your DeFi positions and progress
+  </Card>
+  <Card title="AI Copilot" icon="robot" href="/features/ai-copilot">
+    Generate strategies to earn AI Strategist badge
+  </Card>
+</CardGroup>

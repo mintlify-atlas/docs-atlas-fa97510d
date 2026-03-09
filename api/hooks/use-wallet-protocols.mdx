@@ -1,0 +1,446 @@
+---
+title: 'useWalletProtocols Hook'
+description: 'React hook for detecting wallet positions across DeFi protocols'
+icon: 'hook'
+---
+
+## Overview
+
+The `useWalletProtocols` hook provides a React-friendly interface to detect which DeFi protocols a connected wallet has active positions in. It automatically fetches and updates when the wallet address changes.
+
+**Location:** `src/hooks/useWalletProtocols.js`
+
+## Import
+
+```javascript
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+```
+
+## Signature
+
+```typescript
+function useWalletProtocols(address: string | null): {
+  walletProtocols: Array<WalletProtocol>;
+  loading: boolean;
+  error: string | null;
+}
+```
+
+## Parameters
+
+<ParamField path="address" type="string | null" required>
+  Stacks wallet address to analyze. Pass `null` or empty string when wallet is disconnected.
+  
+  **Example:** `SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7`
+</ParamField>
+
+## Return Values
+
+<ResponseField name="walletProtocols" type="Array<WalletProtocol>" required>
+  Array of detected protocol positions
+  
+  <Expandable title="WalletProtocol Structure">
+    <ResponseField name="id" type="string">
+      Protocol identifier (e.g., `stackingdao`, `zest`)
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Protocol display name
+    </ResponseField>
+    <ResponseField name="color" type="string">
+      Brand color hex code for UI theming
+    </ResponseField>
+    <ResponseField name="asset" type="string">
+      Receipt/LP token symbol (e.g., `stSTX`, `zsBTC`)
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Protocol type (Stacking, Lending, DEX LP, Yield, Borrowing)
+    </ResponseField>
+    <ResponseField name="tokenContract" type="string">
+      Full Stacks contract identifier for the token
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Human-readable position description
+    </ResponseField>
+    <ResponseField name="balance" type="string">
+      Raw token balance in microunits (string format)
+    </ResponseField>
+    <ResponseField name="balanceNum" type="number">
+      Converted balance in standard units (balance / 1,000,000)
+    </ResponseField>
+    <ResponseField name="hasToken" type="boolean">
+      Whether wallet holds the protocol's token
+    </ResponseField>
+    <ResponseField name="hasInteracted" type="boolean">
+      Whether wallet has transacted with the protocol
+    </ResponseField>
+    <ResponseField name="confidence" type="string">
+      Detection confidence: `confirmed` (has tokens) or `likely` (only transactions)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean" required>
+  `true` while fetching wallet data, `false` once complete
+</ResponseField>
+
+<ResponseField name="error" type="string | null" required>
+  Error message if detection failed, otherwise `null`
+</ResponseField>
+
+## Usage Examples
+
+<CodeGroup>
+```jsx Basic Usage
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+
+function WalletDashboard({ walletAddress }) {
+  const { walletProtocols, loading, error } = useWalletProtocols(walletAddress);
+
+  if (loading) return <div>Scanning wallet...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (walletProtocols.length === 0) {
+    return <div>No DeFi positions found</div>;
+  }
+
+  return (
+    <div>
+      <h2>Your Active Positions ({walletProtocols.length})</h2>
+      {walletProtocols.map(protocol => (
+        <div key={protocol.id} style={{ borderLeft: `4px solid ${protocol.color}` }}>
+          <h3>{protocol.name}</h3>
+          <p>{protocol.description}</p>
+          <p>Balance: {protocol.balanceNum.toFixed(6)} {protocol.asset}</p>
+          <span>{protocol.confidence === 'confirmed' ? '✓ Confirmed' : '~ Likely'}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx Connect Wallet Flow
+import { useState } from 'react';
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+
+function ConnectWallet() {
+  const [address, setAddress] = useState(null);
+  const { walletProtocols, loading } = useWalletProtocols(address);
+
+  const handleConnect = async () => {
+    // Use your wallet connection library (e.g., @stacks/connect)
+    const userAddress = await connectWallet();
+    setAddress(userAddress);
+  };
+
+  return (
+    <div>
+      {!address ? (
+        <button onClick={handleConnect}>Connect Wallet</button>
+      ) : (
+        <div>
+          <p>Connected: {address}</p>
+          {loading ? (
+            <p>Detecting positions...</p>
+          ) : (
+            <p>Found {walletProtocols.length} active positions</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx Protocol Type Grouping
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+
+function PositionsByType({ address }) {
+  const { walletProtocols, loading } = useWalletProtocols(address);
+
+  const grouped = walletProtocols.reduce((acc, protocol) => {
+    acc[protocol.type] = acc[protocol.type] || [];
+    acc[protocol.type].push(protocol);
+    return acc;
+  }, {});
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {Object.entries(grouped).map(([type, protocols]) => (
+        <div key={type}>
+          <h3>{type} Positions</h3>
+          {protocols.map(p => (
+            <div key={p.id}>
+              <span>{p.name}</span>
+              <span>{p.balanceNum.toFixed(6)} {p.asset}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx Confidence Filter
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+
+function ConfirmedPositions({ address }) {
+  const { walletProtocols, loading } = useWalletProtocols(address);
+
+  // Only show positions where wallet holds tokens
+  const confirmed = walletProtocols.filter(p => p.confidence === 'confirmed');
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>Confirmed Positions ({confirmed.length})</h2>
+      {confirmed.map(protocol => (
+        <div key={protocol.id}>
+          <img src={protocol.logo} alt={protocol.name} width={32} />
+          <div>
+            <h4>{protocol.name}</h4>
+            <p>{protocol.balanceNum.toFixed(6)} {protocol.asset}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Auto-Update" icon="rotate">
+    Automatically re-scans when wallet address changes
+  </Card>
+  
+  <Card title="Empty State" icon="circle-xmark">
+    Returns empty array when no address provided (graceful handling)
+  </Card>
+  
+  <Card title="Error Recovery" icon="shield-check">
+    Captures API errors without crashing the component
+  </Card>
+  
+  <Card title="Two-Factor Detection" icon="magnifying-glass">
+    Checks both token balances AND transaction history for accuracy
+  </Card>
+</CardGroup>
+
+## Behavior
+
+### Address Changes
+
+The hook automatically re-runs detection when the `address` parameter changes:
+
+```javascript
+useEffect(() => {
+  if (!address) {
+    setWalletProtocols([]);
+    return;
+  }
+  // ... fetch positions
+}, [address]); // Re-run when address changes
+```
+
+### No Address Provided
+
+When `address` is `null`, `undefined`, or empty string:
+- Returns `[]` for `walletProtocols`
+- Sets `loading` to `false`
+- No API calls made
+
+### Loading States
+
+1. **Initial:** `loading = false`, `walletProtocols = []`
+2. **Fetching:** `loading = true`
+3. **Success:** `loading = false`, `walletProtocols = [...]`
+4. **Error:** `loading = false`, `error = "message"`
+
+## Detection Methods
+
+### Token Balance Check
+
+Scans wallet for protocol-specific LP or receipt tokens:
+
+```javascript
+const tokenBalance = tokenBalances[tokenKey]?.balance ?? '0';
+const hasToken = BigInt(tokenBalance) > 0n;
+```
+
+**Result:** `confidence = "confirmed"`
+
+### Transaction History Check
+
+Analyzes last 50 transactions for protocol contract interactions:
+
+```javascript
+const hasInteracted = [...interactedContracts].some(id =>
+  id.startsWith(contractAddr)
+);
+```
+
+**Result:** `confidence = "likely"`
+
+## Implementation Details
+
+### Source Code
+
+```javascript
+import { useState, useEffect } from 'react';
+import { detectWalletProtocols } from '../services/portfolioProtocols';
+
+export function useWalletProtocols(address) {
+    const [walletProtocols, setWalletProtocols] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (!address) {
+            setWalletProtocols([]);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        detectWalletProtocols(address)
+            .then(setWalletProtocols)
+            .catch(e => setError(e.message))
+            .finally(() => setLoading(false));
+    }, [address]);
+
+    return { walletProtocols, loading, error };
+}
+```
+
+## Supported Protocols
+
+The hook can detect positions in these Stacks DeFi protocols:
+
+<AccordionGroup>
+  <Accordion title="StackingDAO (stSTX)" icon="layer-group">
+    **Type:** Stacking  
+    **Token:** stSTX (liquid staking receipt)  
+    **Contract:** `SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token`
+  </Accordion>
+  
+  <Accordion title="Zest Protocol (zsBTC)" icon="coins">
+    **Type:** Lending  
+    **Token:** zsBTC (lending position)  
+    **Contract:** `SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zest-reward-dist`
+  </Accordion>
+  
+  <Accordion title="ALEX Lab (atALEX)" icon="arrow-right-arrow-left">
+    **Type:** DEX / Yield  
+    **Token:** atALEX (auto-compounding)  
+    **Contract:** `SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.auto-alex-v3`
+  </Accordion>
+  
+  <Accordion title="Bitflow (stxSTX-LP)" icon="water">
+    **Type:** DEX LP  
+    **Token:** stxSTX-LP (liquidity pool)  
+    **Contract:** `STTWD9SPRQVD3P733V89SV0P8EP8QSB5B00ZBZQ.stxstx-lp-token-v-1-2`
+  </Accordion>
+  
+  <Accordion title="Hermetica (USDh)" icon="chart-line">
+    **Type:** Yield  
+    **Token:** USDh (yield-bearing stablecoin)  
+    **Contract:** `SP2XD7417HGPRTREMKF748VNEQPDRR0RMANB7X1N.token-usdh`
+  </Accordion>
+  
+  <Accordion title="Velar (WELSH-LP)" icon="gem">
+    **Type:** DEX LP  
+    **Token:** WELSH-LP (liquidity pool)  
+    **Contract:** `SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx-welsh-lp-token`
+  </Accordion>
+  
+  <Accordion title="Granite (sBTC Collateral)" icon="landmark">
+    **Type:** Borrowing  
+    **Token:** sBTC Collateral  
+    **Contract:** `SP2XD7417HGPRTREMKF748VNEQPDRR0RMANB7X1N.granite-vault`
+  </Accordion>
+</AccordionGroup>
+
+## Performance
+
+<Info>
+  **Initial Detection:** ~1-2s for parallel API calls (balances + transactions)  
+  **Subsequent Updates:** Triggered only when `address` changes  
+  **No Auto-Refresh:** Hook does not poll for updates (call with new address to refresh)
+</Info>
+
+## Comparison with Service
+
+| Feature | `useWalletProtocols` Hook | `detectWalletProtocols` Service |
+|---------|--------------------------|--------------------------------|
+| **Usage** | React components | Any JavaScript context |
+| **State Management** | Built-in with `useState` | Manual |
+| **Address Changes** | Auto-detects via `useEffect` | Manual re-call |
+| **Error Handling** | Exposed as state | Try/catch required |
+| **Loading State** | Built-in | Manual |
+
+## Common Patterns
+
+### Wallet Connection Integration
+
+```jsx
+import { useConnect } from '@stacks/connect-react';
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+
+function App() {
+  const { authenticate, userSession } = useConnect();
+  const address = userSession?.loadUserData()?.profile?.stxAddress?.mainnet;
+  
+  const { walletProtocols, loading } = useWalletProtocols(address);
+
+  return (
+    <div>
+      {!address ? (
+        <button onClick={() => authenticate()}>Connect Wallet</button>
+      ) : (
+        <div>
+          <p>Positions: {walletProtocols.length}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Portfolio Value Calculation
+
+```jsx
+import { useWalletProtocols } from '../hooks/useWalletProtocols';
+import { useProtocolData } from '../hooks/useProtocolData';
+
+function PortfolioValue({ address }) {
+  const { walletProtocols } = useWalletProtocols(address);
+  const { protocols } = useProtocolData();
+
+  // Calculate total value (simplified - would need price data)
+  const positions = walletProtocols.filter(wp => wp.hasToken);
+  
+  return (
+    <div>
+      <h2>Portfolio Summary</h2>
+      <p>Active Positions: {positions.length}</p>
+      <p>Protocols Used: {new Set(positions.map(p => p.id)).size}</p>
+    </div>
+  );
+}
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Portfolio Protocols Service" icon="wallet" href="/api/portfolio-protocols">
+    Underlying service that detects wallet positions
+  </Card>
+  <Card title="useProtocolData Hook" icon="chart-line" href="/api/hooks/use-protocol-data">
+    Fetch protocol TVL and APY data
+  </Card>
+</CardGroup>

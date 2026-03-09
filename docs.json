@@ -44,7 +44,8 @@
               "features/yield-calculator",
               "features/stacking-tracker",
               "features/health-score",
-              "features/protocol-comparison"
+              "features/protocol-comparison",
+              "features/achievements"
             ]
           },
           {
@@ -115,7 +116,9 @@
               "api/ai-service",
               "api/contract-service",
               "api/stacks-api",
-              "api/protocol-data"
+              "api/protocol-data",
+              "api/defillama-service",
+              "api/portfolio-protocols"
             ]
           },
           {
@@ -124,7 +127,9 @@
               "api/hooks/use-wallet",
               "api/hooks/use-ai-advisor",
               "api/hooks/use-portfolio",
-              "api/hooks/use-protocols"
+              "api/hooks/use-protocols",
+              "api/hooks/use-protocol-data",
+              "api/hooks/use-wallet-protocols"
             ]
           }
         ]

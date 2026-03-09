@@ -1,0 +1,297 @@
+---
+title: 'DefiLlama Service'
+description: 'Integration service for fetching live TVL and APY data from DefiLlama API'
+icon: 'chart-line'
+---
+
+## Overview
+
+The DefiLlama service integrates with [DefiLlama's API](https://defillama.com) to fetch real-time Total Value Locked (TVL) and Annual Percentage Yield (APY) data for Stacks DeFi protocols.
+
+**Location:** `src/services/defiLlamaService.js`
+
+## API Strategy
+
+<Card title="Data Sources" icon="database">
+  - **TVL:** `api.llama.fi/protocol/{slug}` - Works for all Stacks protocols
+  - **APY:** Fetched from `medianApy` field in protocol endpoint
+  - **Logos:** `icons.llama.fi/{slug}.png`
+</Card>
+
+## Protocol Metadata
+
+The `PROTOCOL_META` array defines all supported Stacks DeFi protocols with their metadata and fallback values:
+
+<ParamField path="PROTOCOL_META" type="array">
+  Array of protocol configuration objects
+  
+  <Expandable title="Protocol Object Properties">
+    <ResponseField name="id" type="string" required>
+      Unique protocol identifier (e.g., `stackingdao`, `zest`, `alex`)
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Display name of the protocol
+    </ResponseField>
+    
+    <ResponseField name="slug" type="string" required>
+      DefiLlama protocol slug for API calls
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Protocol category: `Stacking`, `Lending`, `DEX`, `Yield`, or `Borrowing`
+    </ResponseField>
+    
+    <ResponseField name="asset" type="string" required>
+      Primary asset type (e.g., `STX`, `sBTC`, `sBTC/STX`)
+    </ResponseField>
+    
+    <ResponseField name="risk" type="string" required>
+      Risk level: `Low`, `Medium`, or `High`
+    </ResponseField>
+    
+    <ResponseField name="audited" type="boolean" required>
+      Whether the protocol has been security audited
+    </ResponseField>
+    
+    <ResponseField name="minDeposit" type="string" required>
+      Minimum deposit requirement
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Protocol website URL
+    </ResponseField>
+    
+    <ResponseField name="logo" type="string" required>
+      Logo URL (local or DefiLlama CDN)
+    </ResponseField>
+    
+    <ResponseField name="color" type="string" required>
+      Brand color hex code for UI theming
+    </ResponseField>
+    
+    <ResponseField name="fallbackApy" type="number" required>
+      Fallback APY when API returns null (percentage)
+    </ResponseField>
+    
+    <ResponseField name="fallbackTvlRaw" type="number">
+      Fallback TVL in USD (optional, for protocols with inconsistent API data)
+    </ResponseField>
+    
+    <ResponseField name="fallbackTvl" type="string">
+      Formatted fallback TVL string (optional)
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+### Example Protocol Entry
+
+```javascript
+{
+  id: 'stackingdao',
+  name: 'StackingDAO',
+  slug: 'stackingdao',
+  type: 'Stacking',
+  asset: 'STX',
+  risk: 'Low',
+  audited: true,
+  minDeposit: '100 STX',
+  url: 'https://stackingdao.com',
+  logo: '/logos/stackingdao.png',
+  color: '#3B82F6',
+  fallbackApy: 9.5,
+}
+```
+
+## Main Function
+
+### fetchAllProtocolData()
+
+Fetches live TVL and APY data for all protocols in parallel.
+
+<ParamField path="fetchAllProtocolData" type="function">
+  Returns enriched protocol data with live or fallback values
+</ParamField>
+
+**Returns:** `Promise<Array<ProtocolData>>`
+
+<ResponseField name="ProtocolData" type="object">
+  Extended protocol object with live data
+  
+  <Expandable title="Additional Fields">
+    <ResponseField name="tvlRaw" type="number">
+      Raw TVL in USD (null if unavailable)
+    </ResponseField>
+    
+    <ResponseField name="tvl" type="string">
+      Formatted TVL string (e.g., `$45.2M`, `$1.2B`)
+    </ResponseField>
+    
+    <ResponseField name="apy" type="number">
+      APY percentage (live or fallback)
+    </ResponseField>
+    
+    <ResponseField name="apyDisplay" type="string">
+      Formatted APY string (e.g., `9.5%`)
+    </ResponseField>
+    
+    <ResponseField name="apySource" type="string">
+      Data source: `live` or `fallback`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```javascript Basic Usage
+import { fetchAllProtocolData } from './services/defiLlamaService';
+
+async function loadProtocols() {
+  try {
+    const protocols = await fetchAllProtocolData();
+    
+    protocols.forEach(protocol => {
+      console.log(`${protocol.name}:`);
+      console.log(`  TVL: ${protocol.tvl}`);
+      console.log(`  APY: ${protocol.apyDisplay}`);
+      console.log(`  Data: ${protocol.apySource}`);
+    });
+  } catch (error) {
+    console.error('Failed to fetch protocol data:', error);
+  }
+}
+```
+
+```javascript React Component
+import { useState, useEffect } from 'react';
+import { fetchAllProtocolData } from '../services/defiLlamaService';
+
+function ProtocolList() {
+  const [protocols, setProtocols] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAllProtocolData()
+      .then(setProtocols)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Loading protocols...</div>;
+
+  return (
+    <div>
+      {protocols.map(p => (
+        <div key={p.id}>
+          <h3>{p.name}</h3>
+          <p>TVL: {p.tvl} | APY: {p.apyDisplay}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```javascript Filter by Type
+import { fetchAllProtocolData } from './services/defiLlamaService';
+
+async function getStackingProtocols() {
+  const all = await fetchAllProtocolData();
+  
+  // Filter by protocol type
+  const stackingProtocols = all.filter(p => p.type === 'Stacking');
+  
+  // Sort by APY descending
+  stackingProtocols.sort((a, b) => (b.apy || 0) - (a.apy || 0));
+  
+  return stackingProtocols;
+}
+```
+</CodeGroup>
+
+## Implementation Details
+
+### TVL Fetching
+
+The service prioritizes Stacks-specific chain TVL over total protocol TVL:
+
+```javascript
+const tvlRaw =
+  data?.currentChainTvls?.Stacks ??
+  data?.currentChainTvls?.stacks ??
+  data?.tvl ??
+  null;
+```
+
+### APY Resolution
+
+APY is sourced from DefiLlama's `medianApy` field with fallback:
+
+```javascript
+const apyRaw =
+  data?.medianApy ??
+  data?.apy ??
+  null;
+
+const apy = fetched.apy ?? meta.fallbackApy ?? null;
+```
+
+### Error Handling
+
+Uses `Promise.allSettled()` to ensure partial failures don't break entire data fetch:
+
+```javascript
+const results = await Promise.allSettled(
+  PROTOCOL_META.map(async (meta) => {
+    // Individual protocol fetch with try/catch
+  })
+);
+```
+
+## TVL Formatting
+
+The service includes a `formatTVL()` helper that converts raw USD values to readable strings:
+
+| Raw Value | Formatted |
+|-----------|----------|
+| 1,234,567,890 | `$1.23B` |
+| 45,600,000 | `$45.60M` |
+| 431,000 | `$431.0K` |
+| 850 | `$850` |
+
+## Supported Protocols
+
+<CardGroup cols={2}>
+  <Card title="StackingDAO" icon="layer-group" color="#3B82F6">
+    Liquid stacking protocol for STX
+  </Card>
+  <Card title="Zest Protocol" icon="coins" color="#F7931A">
+    Bitcoin-backed lending with sBTC
+  </Card>
+  <Card title="ALEX Lab" icon="arrow-right-arrow-left" color="#f59e0b">
+    Decentralized exchange and AMM
+  </Card>
+  <Card title="Bitflow" icon="water" color="#22c55e">
+    Liquidity pools and swaps
+  </Card>
+  <Card title="Hermetica" icon="chart-line" color="#8b5cf6">
+    Yield optimization strategies
+  </Card>
+  <Card title="Velar" icon="gem" color="#ec4899">
+    DEX with advanced trading features
+  </Card>
+  <Card title="Granite" icon="landmark" color="#6b7280">
+    Bitcoin-collateralized borrowing
+  </Card>
+</CardGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="useProtocolData Hook" icon="hook" href="/api/hooks/use-protocol-data">
+    React hook wrapper with auto-refresh
+  </Card>
+  <Card title="Portfolio Protocols" icon="wallet" href="/api/portfolio-protocols">
+    Detect user positions in protocols
+  </Card>
+</CardGroup>

@@ -1,0 +1,345 @@
+---
+title: 'useProtocolData Hook'
+description: 'React hook for fetching live protocol TVL and APY data with auto-refresh'
+icon: 'hook'
+---
+
+## Overview
+
+The `useProtocolData` hook provides a React-friendly interface to fetch and auto-refresh DeFi protocol data from DefiLlama. It handles loading states, error management, and automatic updates every 5 minutes.
+
+**Location:** `src/hooks/useProtocolData.js`
+
+## Import
+
+```javascript
+import { useProtocolData } from '../hooks/useProtocolData';
+```
+
+## Signature
+
+```typescript
+function useProtocolData(): {
+  protocols: Array<ProtocolData>;
+  loading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+}
+```
+
+## Return Values
+
+<ResponseField name="protocols" type="Array<ProtocolData>" required>
+  Array of protocol data objects with live TVL and APY
+  
+  <Expandable title="ProtocolData Structure">
+    <ResponseField name="id" type="string">
+      Protocol identifier
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Protocol display name
+    </ResponseField>
+    <ResponseField name="slug" type="string">
+      DefiLlama API slug
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Protocol category (Stacking, Lending, DEX, etc.)
+    </ResponseField>
+    <ResponseField name="tvl" type="string">
+      Formatted TVL string (e.g., `$45.2M`)
+    </ResponseField>
+    <ResponseField name="tvlRaw" type="number">
+      Raw TVL in USD
+    </ResponseField>
+    <ResponseField name="apy" type="number">
+      APY percentage
+    </ResponseField>
+    <ResponseField name="apyDisplay" type="string">
+      Formatted APY string (e.g., `9.5%`)
+    </ResponseField>
+    <ResponseField name="apySource" type="string">
+      Data source: `live` or `fallback`
+    </ResponseField>
+    <ResponseField name="asset" type="string">
+      Primary asset type
+    </ResponseField>
+    <ResponseField name="risk" type="string">
+      Risk level (Low, Medium, High)
+    </ResponseField>
+    <ResponseField name="audited" type="boolean">
+      Security audit status
+    </ResponseField>
+    <ResponseField name="color" type="string">
+      Brand color hex code
+    </ResponseField>
+    <ResponseField name="logo" type="string">
+      Logo URL
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      Protocol website
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean" required>
+  `true` during initial data fetch, `false` once complete
+</ResponseField>
+
+<ResponseField name="error" type="string | null" required>
+  Error message if fetch failed, otherwise `null`
+</ResponseField>
+
+<ResponseField name="lastUpdated" type="Date | null" required>
+  Timestamp of last successful data refresh, `null` before first load
+</ResponseField>
+
+## Usage Examples
+
+<CodeGroup>
+```jsx Basic Usage
+import { useProtocolData } from '../hooks/useProtocolData';
+
+function ProtocolDashboard() {
+  const { protocols, loading, error, lastUpdated } = useProtocolData();
+
+  if (loading) return <div>Loading protocols...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <p>Last updated: {lastUpdated?.toLocaleTimeString()}</p>
+      
+      {protocols.map(protocol => (
+        <div key={protocol.id}>
+          <h3>{protocol.name}</h3>
+          <p>TVL: {protocol.tvl}</p>
+          <p>APY: {protocol.apyDisplay}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx Filtering Protocols
+import { useProtocolData } from '../hooks/useProtocolData';
+
+function HighYieldProtocols() {
+  const { protocols, loading } = useProtocolData();
+
+  // Filter protocols with APY > 10%
+  const highYield = protocols.filter(p => p.apy && p.apy > 10);
+
+  // Sort by APY descending
+  const sorted = highYield.sort((a, b) => (b.apy || 0) - (a.apy || 0));
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>High Yield Opportunities ({sorted.length})</h2>
+      {sorted.map(p => (
+        <div key={p.id}>
+          <span>{p.name}</span>
+          <span style={{ color: p.color }}>{p.apyDisplay}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx Protocol Type Breakdown
+import { useProtocolData } from '../hooks/useProtocolData';
+
+function ProtocolTypeStats() {
+  const { protocols, loading } = useProtocolData();
+
+  const byType = protocols.reduce((acc, p) => {
+    acc[p.type] = acc[p.type] || [];
+    acc[p.type].push(p);
+    return acc;
+  }, {});
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {Object.entries(byType).map(([type, protos]) => (
+        <div key={type}>
+          <h3>{type} ({protos.length})</h3>
+          <ul>
+            {protos.map(p => (
+              <li key={p.id}>{p.name} - {p.apyDisplay}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```jsx Live Data Indicator
+import { useProtocolData } from '../hooks/useProtocolData';
+
+function ProtocolTable() {
+  const { protocols, loading, lastUpdated } = useProtocolData();
+
+  const liveCount = protocols.filter(p => p.apySource === 'live').length;
+  const fallbackCount = protocols.filter(p => p.apySource === 'fallback').length;
+
+  return (
+    <div>
+      <div className="status-bar">
+        <span>Live data: {liveCount}</span>
+        <span>Fallback: {fallbackCount}</span>
+        <span>Updated: {lastUpdated?.toLocaleTimeString()}</span>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Protocol</th>
+            <th>TVL</th>
+            <th>APY</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {protocols.map(p => (
+            <tr key={p.id}>
+              <td>{p.name}</td>
+              <td>{p.tvl}</td>
+              <td>{p.apyDisplay}</td>
+              <td>
+                {p.apySource === 'live' ? '🟢' : '🟡'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Auto-Refresh" icon="rotate">
+    Automatically refetches data every 5 minutes to keep protocol data current
+  </Card>
+  
+  <Card title="Static Fallback" icon="database">
+    Starts with static `PROTOCOL_META` data for instant UI rendering
+  </Card>
+  
+  <Card title="Error Handling" icon="shield-check">
+    Captures and exposes fetch errors without breaking the UI
+  </Card>
+  
+  <Card title="Cleanup Safe" icon="broom">
+    Cancels pending updates when component unmounts to prevent memory leaks
+  </Card>
+</CardGroup>
+
+## Behavior
+
+### Initial Load
+
+1. Hook starts with static protocol metadata from `PROTOCOL_META`
+2. `loading` is `true`
+3. Immediately fetches live data from DefiLlama
+4. Updates `protocols` with enriched data
+5. Sets `loading` to `false` and `lastUpdated` to current time
+
+### Auto-Refresh
+
+- Sets up 5-minute interval timer on mount
+- Silently refetches data in background
+- Updates `protocols` and `lastUpdated` on success
+- Does **not** show loading spinner during refresh (UX optimization)
+
+### Cleanup
+
+```javascript
+return () => { 
+  cancelled = true; 
+  clearInterval(interval); 
+};
+```
+
+Prevents state updates if component unmounts during fetch.
+
+## Implementation Details
+
+### Source Code
+
+```javascript
+import { useState, useEffect } from 'react';
+import { fetchAllProtocolData, PROTOCOL_META } from '../services/defiLlamaService';
+
+export function useProtocolData() {
+    const [protocols, setProtocols] = useState(PROTOCOL_META);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            try {
+                setLoading(true);
+                const data = await fetchAllProtocolData();
+                if (!cancelled) {
+                    setProtocols(data);
+                    setLastUpdated(new Date());
+                }
+            } catch (err) {
+                if (!cancelled) setError(err.message);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+        load();
+        // Refresh every 5 minutes
+        const interval = setInterval(load, 5 * 60 * 1000);
+        return () => { cancelled = true; clearInterval(interval); };
+    }, []);
+
+    return { protocols, loading, error, lastUpdated };
+}
+```
+
+## Performance
+
+<Info>
+  **Initial Render:** Instant with static data  
+  **First Load:** ~1-2s for parallel API calls  
+  **Refresh Interval:** 5 minutes (300,000ms)  
+  **Memory:** Cleaned up on unmount
+</Info>
+
+## Comparison with Service
+
+| Feature | `useProtocolData` Hook | `fetchAllProtocolData` Service |
+|---------|----------------------|-------------------------------|
+| **Usage** | React components | Any JavaScript context |
+| **State Management** | Built-in with `useState` | Manual |
+| **Auto-Refresh** | Yes (5 min interval) | No |
+| **Error Handling** | Exposed as state | Try/catch required |
+| **Loading State** | Built-in | Manual |
+| **Cleanup** | Automatic | N/A |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="DefiLlama Service" icon="chart-line" href="/api/defillama-service">
+    Underlying service that fetches protocol data
+  </Card>
+  <Card title="useWalletProtocols Hook" icon="wallet" href="/api/hooks/use-wallet-protocols">
+    Detect wallet positions in protocols
+  </Card>
+</CardGroup>

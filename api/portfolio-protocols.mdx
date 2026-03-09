@@ -1,0 +1,307 @@
+---
+title: 'Portfolio Protocols Service'
+description: 'Detect wallet positions across Stacks DeFi protocols using on-chain data'
+icon: 'wallet'
+---
+
+## Overview
+
+The Portfolio Protocols service analyzes a Stacks wallet address to detect active positions across DeFi protocols. It checks token balances and transaction history to identify where users have deposited funds.
+
+**Location:** `src/services/portfolioProtocols.js`
+
+## How It Works
+
+<Steps>
+  <Step title="Fetch Token Balances">
+    Queries Hiro API for all fungible tokens held by the wallet
+  </Step>
+  <Step title="Fetch Transaction History">
+    Retrieves recent 50 transactions to detect protocol interactions
+  </Step>
+  <Step title="Match Protocol Contracts">
+    Checks if wallet holds LP/receipt tokens or has transacted with known protocol contracts
+  </Step>
+  <Step title="Return Detected Positions">
+    Returns array of protocols with position details and confidence levels
+  </Step>
+</Steps>
+
+## Main Function
+
+### detectWalletProtocols(address)
+
+Detects which protocols a wallet has active positions in.
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address (e.g., `SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7`)
+</ParamField>
+
+**Returns:** `Promise<Array<WalletProtocol>>`
+
+<ResponseField name="WalletProtocol" type="object">
+  Detected protocol position with metadata
+  
+  <Expandable title="Properties">
+    <ResponseField name="id" type="string" required>
+      Protocol identifier (e.g., `stackingdao`, `zest`)
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Protocol display name
+    </ResponseField>
+    
+    <ResponseField name="color" type="string" required>
+      Brand color hex code
+    </ResponseField>
+    
+    <ResponseField name="asset" type="string" required>
+      Receipt/LP token symbol (e.g., `stSTX`, `zsBTC`)
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Protocol type: `Stacking`, `Lending`, `DEX LP`, `Yield`, or `Borrowing`
+    </ResponseField>
+    
+    <ResponseField name="tokenContract" type="string" required>
+      Full contract identifier for the receipt/LP token
+    </ResponseField>
+    
+    <ResponseField name="description" type="string" required>
+      Human-readable position description
+    </ResponseField>
+    
+    <ResponseField name="balance" type="string" required>
+      Raw token balance in microunits (string to handle big integers)
+    </ResponseField>
+    
+    <ResponseField name="balanceNum" type="number" required>
+      Converted balance in standard units (balance / 1,000,000)
+    </ResponseField>
+    
+    <ResponseField name="hasToken" type="boolean" required>
+      Whether wallet holds the protocol's token (balance > 0)
+    </ResponseField>
+    
+    <ResponseField name="hasInteracted" type="boolean" required>
+      Whether wallet has transacted with the protocol's contract
+    </ResponseField>
+    
+    <ResponseField name="confidence" type="string" required>
+      Detection confidence: `confirmed` (has tokens) or `likely` (only transactions)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Examples
+
+<CodeGroup>
+```javascript Basic Detection
+import { detectWalletProtocols } from './services/portfolioProtocols';
+
+const walletAddress = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
+
+const positions = await detectWalletProtocols(walletAddress);
+
+console.log(`Found ${positions.length} protocol positions`);
+
+positions.forEach(pos => {
+  console.log(`${pos.name}: ${pos.balanceNum.toFixed(6)} ${pos.asset}`);
+  console.log(`  Confidence: ${pos.confidence}`);
+});
+```
+
+```javascript React Component
+import { useState } from 'react';
+import { detectWalletProtocols } from '../services/portfolioProtocols';
+
+function WalletPositions({ address }) {
+  const [positions, setPositions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const checkPositions = async () => {
+    setLoading(true);
+    try {
+      const data = await detectWalletProtocols(address);
+      setPositions(data);
+    } catch (error) {
+      console.error('Detection failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={checkPositions} disabled={loading}>
+        {loading ? 'Scanning...' : 'Detect Positions'}
+      </button>
+      
+      {positions.map(pos => (
+        <div key={pos.id} style={{ borderLeft: `4px solid ${pos.color}` }}>
+          <h4>{pos.name}</h4>
+          <p>{pos.description}</p>
+          <p>Balance: {pos.balanceNum.toFixed(6)} {pos.asset}</p>
+          <span>{pos.confidence === 'confirmed' ? '✓' : '~'}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```javascript Filter by Confidence
+import { detectWalletProtocols } from './services/portfolioProtocols';
+
+async function getConfirmedPositions(address) {
+  const all = await detectWalletProtocols(address);
+  
+  // Only return positions where user holds tokens
+  const confirmed = all.filter(pos => pos.confidence === 'confirmed');
+  
+  // Sort by balance descending
+  confirmed.sort((a, b) => b.balanceNum - a.balanceNum);
+  
+  return confirmed;
+}
+```
+
+```javascript Calculate Total Protocols
+import { detectWalletProtocols } from './services/portfolioProtocols';
+
+async function getDiversificationScore(address) {
+  const positions = await detectWalletProtocols(address);
+  
+  const byType = positions.reduce((acc, pos) => {
+    acc[pos.type] = (acc[pos.type] || 0) + 1;
+    return acc;
+  }, {});
+  
+  return {
+    totalProtocols: positions.length,
+    protocolTypes: Object.keys(byType).length,
+    breakdown: byType,
+  };
+}
+```
+</CodeGroup>
+
+## Protocol Contract Addresses
+
+The service monitors these known protocol contracts:
+
+<Accordion title="StackingDAO">
+  **Type:** Stacking  
+  **Token:** stSTX (liquid staking receipt)  
+  **Contract:** `SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token`
+</Accordion>
+
+<Accordion title="Zest Protocol">
+  **Type:** Lending  
+  **Token:** zsBTC (lending position)  
+  **Contract:** `SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zest-reward-dist`
+</Accordion>
+
+<Accordion title="ALEX Lab">
+  **Type:** DEX / Yield  
+  **Token:** atALEX (auto-compounding position)  
+  **Contract:** `SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.auto-alex-v3`
+</Accordion>
+
+<Accordion title="Bitflow">
+  **Type:** DEX LP  
+  **Token:** stxSTX-LP (liquidity pool token)  
+  **Contract:** `STTWD9SPRQVD3P733V89SV0P8EP8QSB5B00ZBZQ.stxstx-lp-token-v-1-2`
+</Accordion>
+
+<Accordion title="Hermetica">
+  **Type:** Yield  
+  **Token:** USDh (yield-bearing stablecoin)  
+  **Contract:** `SP2XD7417HGPRTREMKF748VNEQPDRR0RMANB7X1N.token-usdh`
+</Accordion>
+
+<Accordion title="Velar">
+  **Type:** DEX LP  
+  **Token:** WELSH-LP (liquidity pool token)  
+  **Contract:** `SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx-welsh-lp-token`
+</Accordion>
+
+<Accordion title="Granite">
+  **Type:** Borrowing  
+  **Token:** sBTC Collateral  
+  **Contract:** `SP2XD7417HGPRTREMKF748VNEQPDRR0RMANB7X1N.granite-vault`
+</Accordion>
+
+## Detection Logic
+
+The service uses two detection methods for maximum accuracy:
+
+### 1. Token Balance Check
+
+```javascript
+const tokenBalance = tokenBalances[tokenKey]?.balance ?? '0';
+const hasToken = BigInt(tokenBalance) > 0n;
+```
+
+If the wallet holds any amount of the protocol's receipt/LP token, it's a **confirmed** position.
+
+### 2. Transaction History Check
+
+```javascript
+const hasInteracted = [...interactedContracts].some(id =>
+  id.startsWith(contractAddr)
+);
+```
+
+If the wallet has called functions on the protocol's contract in recent history, it's a **likely** position (may have withdrawn all funds but still active).
+
+## Confidence Levels
+
+<Card title="Confirmed" icon="check" color="#22c55e">
+  Wallet holds the protocol's token (balance > 0). High confidence active position.
+</Card>
+
+<Card title="Likely" icon="circle-question" color="#f59e0b">
+  Wallet has transacted with protocol but holds no tokens. May have withdrawn funds or pending deposits.
+</Card>
+
+## Data Sources
+
+<Info>
+  This service uses the [Hiro Stacks API](https://docs.hiro.so/stacks-blockchain-api) for:
+  - Fungible token balances: `/extended/v1/address/{address}/balances`
+  - Transaction history: `/extended/v1/address/{address}/transactions`
+</Info>
+
+## Error Handling
+
+The function returns an empty array on errors:
+
+```javascript
+try {
+  [tokenBalances, recentTxs] = await Promise.all([
+    fetchTokenBalances(address),
+    fetchRecentTxs(address),
+  ]);
+} catch (e) {
+  console.warn('[portfolioProtocols] fetch error:', e.message);
+  return []; // Fail gracefully
+}
+```
+
+## Performance
+
+- **Parallel Fetching:** Token balances and transactions fetched simultaneously
+- **Transaction Limit:** Only analyzes last 50 transactions for efficiency
+- **No Pagination:** Single-request design for fast response times
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="useWalletProtocols Hook" icon="hook" href="/api/hooks/use-wallet-protocols">
+    React hook wrapper for position detection
+  </Card>
+  <Card title="DefiLlama Service" icon="chart-line" href="/api/defillama-service">
+    Fetch protocol TVL and APY data
+  </Card>
+</CardGroup>
