@@ -1,0 +1,540 @@
+---
+title: 'usePortfolio'
+description: 'Fetch and auto-refresh wallet portfolio data including balances and transaction history'
+icon: 'chart-line'
+---
+
+## Overview
+
+The `usePortfolio` hook fetches comprehensive portfolio data for a Stacks wallet address. It automatically refreshes every 30 seconds to keep balances and transaction history up-to-date.
+
+**Source:** `src/hooks/usePortfolio.js`
+
+## Import
+
+```javascript
+import { usePortfolio } from './hooks/usePortfolio';
+```
+
+## Hook Signature
+
+```javascript
+function usePortfolio(address: string | null): {
+  portfolio: {
+    stxBalance: string,
+    sbtcBalance: string,
+    totalUSD: string,
+    txHistory: Array,
+    stxPrice: number,
+  },
+  loading: boolean,
+  error: string | null,
+}
+```
+
+## Parameters
+
+<ParamField path="address" type="string | null" required>
+  The Stacks wallet address to fetch portfolio data for. If `null` or `undefined`, the hook will not fetch data.
+  
+  **Example:** `"SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5"`
+</ParamField>
+
+## Return Values
+
+<ResponseField name="portfolio" type="object">
+  Complete portfolio data object containing all wallet information:
+  
+  <ResponseField name="portfolio.stxBalance" type="string">
+    STX token balance formatted as a string (e.g., `"100.5000"`). Shows `"--"` while loading or if fetch fails.
+  </ResponseField>
+  
+  <ResponseField name="portfolio.sbtcBalance" type="string">
+    sBTC token balance formatted as a string with full precision (e.g., `"0.00500000"`). Shows `"--"` while loading.
+  </ResponseField>
+  
+  <ResponseField name="portfolio.totalUSD" type="string">
+    Total portfolio value in USD (e.g., `"285.50"`). Calculated from STX and sBTC balances at current market prices. Shows `"--"` while loading.
+  </ResponseField>
+  
+  <ResponseField name="portfolio.txHistory" type="array">
+    Array of recent transaction objects. Each transaction includes:
+    - `txid`: Transaction hash
+    - `tx_status`: `"success"`, `"pending"`, or `"failed"`
+    - `tx_type`: Type of transaction (e.g., `"token_transfer"`, `"contract_call"`)
+    - `sender_address`: Address that initiated the transaction
+    - `block_height`: Block number (if confirmed)
+    - `burn_block_time_iso`: Timestamp in ISO format
+    
+    Empty array `[]` while loading or if no transactions found.
+  </ResponseField>
+  
+  <ResponseField name="portfolio.stxPrice" type="number">
+    Current STX price in USD (e.g., `2.85`). Used to calculate `totalUSD`. Defaults to `0` while loading.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` during initial fetch or refresh, `false` once data is loaded. Use this to show loading skeletons.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if portfolio fetch fails (e.g., `"Failed to load portfolio data"`). `null` if no error.
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```jsx Basic Usage
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+
+function PortfolioDisplay() {
+  const { address } = useWallet();
+  const { portfolio, loading, error } = usePortfolio(address);
+
+  if (loading) {
+    return <div>Loading portfolio...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
+
+  return (
+    <div className="portfolio">
+      <h2>Your Portfolio</h2>
+      <p>STX Balance: {portfolio.stxBalance} STX</p>
+      <p>sBTC Balance: {portfolio.sbtcBalance} sBTC</p>
+      <p>Total Value: ${portfolio.totalUSD}</p>
+      <p>STX Price: ${portfolio.stxPrice}</p>
+    </div>
+  );
+}
+```
+
+```jsx With Loading Skeleton
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+
+function PortfolioCard() {
+  const { connected, address } = useWallet();
+  const { portfolio, loading, error } = usePortfolio(address);
+
+  if (!connected) {
+    return (
+      <div className="card empty">
+        <p>Connect your wallet to view portfolio</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="portfolio-card">
+      <h2>Portfolio Summary</h2>
+      
+      {loading ? (
+        <div className="skeleton">
+          <div className="skeleton-line" />
+          <div className="skeleton-line" />
+          <div className="skeleton-line" />
+        </div>
+      ) : error ? (
+        <div className="error-state">
+          <span>⚠️</span>
+          <p>{error}</p>
+        </div>
+      ) : (
+        <div className="portfolio-grid">
+          <div className="balance-card">
+            <label>STX Balance</label>
+            <p className="amount">{portfolio.stxBalance}</p>
+          </div>
+          
+          <div className="balance-card">
+            <label>sBTC Balance</label>
+            <p className="amount">{portfolio.sbtcBalance}</p>
+          </div>
+          
+          <div className="balance-card highlight">
+            <label>Total Value</label>
+            <p className="amount">${portfolio.totalUSD}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx With Transaction History
+import { usePortfolio } from './hooks/usePortfolio';
+
+function PortfolioDashboard({ address }) {
+  const { portfolio, loading, error } = usePortfolio(address);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="dashboard">
+      {/* Balances Section */}
+      <section className="balances">
+        <h2>Balances</h2>
+        <div className="grid">
+          <div className="balance-item">
+            <span>STX</span>
+            <strong>{portfolio.stxBalance}</strong>
+          </div>
+          <div className="balance-item">
+            <span>sBTC</span>
+            <strong>{portfolio.sbtcBalance}</strong>
+          </div>
+          <div className="balance-item">
+            <span>Total USD</span>
+            <strong>${portfolio.totalUSD}</strong>
+          </div>
+        </div>
+      </section>
+      
+      {/* Transaction History */}
+      <section className="transactions">
+        <h2>Recent Transactions</h2>
+        {portfolio.txHistory.length === 0 ? (
+          <p>No transactions yet</p>
+        ) : (
+          <ul className="tx-list">
+            {portfolio.txHistory.map(tx => (
+              <li key={tx.txid} className="tx-item">
+                <div className="tx-info">
+                  <span className="tx-type">{tx.tx_type}</span>
+                  <span className={`tx-status ${tx.tx_status}`}>
+                    {tx.tx_status}
+                  </span>
+                </div>
+                <div className="tx-details">
+                  <code>{tx.txid.slice(0, 10)}...{tx.txid.slice(-6)}</code>
+                  <time>{new Date(tx.burn_block_time_iso).toLocaleString()}</time>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+```
+
+```jsx Full Dashboard Integration
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function Dashboard() {
+  const { connected, address, connectWallet } = useWallet();
+  const { portfolio, loading, error } = usePortfolio(address);
+  
+  const { strategy, fetchStrategy } = useAIAdvisor({
+    address,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD,
+  });
+
+  if (!connected) {
+    return (
+      <div className="connect-screen">
+        <h1>Welcome to Staxiq</h1>
+        <button onClick={connectWallet}>Connect Wallet</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard-layout">
+      {/* Portfolio Overview */}
+      <header className="portfolio-header">
+        <h1>Portfolio</h1>
+        {loading ? (
+          <div className="loading">Updating...</div>
+        ) : (
+          <div className="portfolio-value">
+            <span className="label">Total Value</span>
+            <span className="amount">${portfolio.totalUSD}</span>
+          </div>
+        )}
+      </header>
+      
+      {/* Balance Cards */}
+      <section className="balances">
+        <div className="card">
+          <h3>STX</h3>
+          <p className="balance">{portfolio.stxBalance}</p>
+          <p className="price">${portfolio.stxPrice} per STX</p>
+        </div>
+        <div className="card">
+          <h3>sBTC</h3>
+          <p className="balance">{portfolio.sbtcBalance}</p>
+        </div>
+      </section>
+      
+      {/* AI Strategy */}
+      <section className="ai-section">
+        <button onClick={fetchStrategy}>Get AI Strategy</button>
+        {strategy && <div className="strategy">{strategy}</div>}
+      </section>
+      
+      {/* Recent Activity */}
+      <section className="activity">
+        <h2>Recent Activity</h2>
+        <ul>
+          {portfolio.txHistory.slice(0, 5).map(tx => (
+            <li key={tx.txid}>
+              {tx.tx_type} · {tx.tx_status}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Auto-Refresh Behavior
+
+The hook automatically refreshes portfolio data every 30 seconds:
+
+```javascript
+useEffect(() => {
+  if (!address) return;
+
+  async function fetchPortfolio() {
+    // Fetch logic...
+  }
+
+  fetchPortfolio(); // Initial fetch
+
+  const interval = setInterval(fetchPortfolio, 30000); // Refresh every 30s
+  return () => clearInterval(interval); // Cleanup on unmount
+}, [address]);
+```
+
+<Note>
+  The auto-refresh ensures users always see up-to-date balances without manual page refreshes. This is especially useful for monitoring pending transactions or deposit confirmations.
+</Note>
+
+## Loading States
+
+The hook provides clear loading states throughout the data lifecycle:
+
+<Steps>
+  <Step title="Initial State">
+    Before `address` is provided:
+    - `loading` is `false`
+    - All portfolio values show `"--"`
+    - `txHistory` is empty `[]`
+  </Step>
+  
+  <Step title="Fetching State">
+    While fetching data:
+    - `loading` is `true`
+    - Previous portfolio values remain visible (or `"--"` on first load)
+    - UI should show loading indicators
+  </Step>
+  
+  <Step title="Success State">
+    After successful fetch:
+    - `loading` is `false`
+    - All portfolio values are populated
+    - `error` is `null`
+  </Step>
+  
+  <Step title="Error State">
+    If fetch fails:
+    - `loading` is `false`
+    - `error` contains error message
+    - Portfolio values show `"--"`
+  </Step>
+</Steps>
+
+## Error Handling
+
+The hook catches and formats errors from the Stacks API:
+
+```javascript
+try {
+  setLoading(true);
+  setError(null);
+  const data = await getFullPortfolio(address);
+  setPortfolio(data);
+} catch (err) {
+  setError('Failed to load portfolio data');
+  console.error(err);
+} finally {
+  setLoading(false);
+}
+```
+
+Common errors:
+- Network request timeout
+- Invalid address format
+- Stacks API rate limiting
+- Blockchain node unavailable
+
+## Data Format
+
+Portfolio data comes from the `getFullPortfolio` service:
+
+```javascript
+import { getFullPortfolio } from '../services/stacksApi';
+
+// Returns:
+{
+  stxBalance: "100.5000",
+  sbtcBalance: "0.00500000",
+  totalUSD: "285.50",
+  stxPrice: 2.85,
+  txHistory: [
+    {
+      txid: "0x1234...",
+      tx_status: "success",
+      tx_type: "token_transfer",
+      sender_address: "SP2H8...",
+      block_height: 123456,
+      burn_block_time_iso: "2024-03-09T12:00:00.000Z",
+    },
+    // ... more transactions
+  ]
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check Address" icon="user">
+    Always ensure `address` is valid before rendering portfolio data. Show a connect prompt if `null`.
+  </Card>
+  <Card title="Loading Skeletons" icon="spinner">
+    Use `loading` state to show skeleton loaders instead of empty states during fetch.
+  </Card>
+  <Card title="Error Display" icon="exclamation-triangle">
+    Always display the `error` message to users when portfolio fetch fails. Include a retry option.
+  </Card>
+  <Card title="Auto-Refresh Awareness" icon="rotate">
+    Remember data refreshes every 30 seconds. Consider showing a "last updated" timestamp.
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Conditional Rendering Based on Connection
+
+```javascript
+function Portfolio() {
+  const { connected, address } = useWallet();
+  const { portfolio, loading } = usePortfolio(connected ? address : null);
+  
+  if (!connected) {
+    return <ConnectPrompt />;
+  }
+  
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+  
+  return <PortfolioDisplay data={portfolio} />;
+}
+```
+
+### Passing Portfolio to Other Hooks
+
+```javascript
+function Dashboard() {
+  const { address } = useWallet();
+  const { portfolio } = usePortfolio(address);
+  
+  // Pass portfolio data to AI advisor
+  const { strategy } = useAIAdvisor({
+    address,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD,
+  });
+  
+  return <div>{/* ... */}</div>;
+}
+```
+
+### Manual Refresh Trigger
+
+```javascript
+import { useState, useEffect } from 'react';
+import { getFullPortfolio } from './services/stacksApi';
+
+function PortfolioWithRefresh({ address }) {
+  const { portfolio, loading } = usePortfolio(address);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  async function handleManualRefresh() {
+    setRefreshing(true);
+    // Force immediate refresh by calling API directly
+    await getFullPortfolio(address);
+    setRefreshing(false);
+  }
+  
+  return (
+    <div>
+      <button onClick={handleManualRefresh} disabled={refreshing}>
+        {refreshing ? 'Refreshing...' : 'Refresh Now'}
+      </button>
+      {/* Portfolio display */}
+    </div>
+  );
+}
+```
+
+## Performance Considerations
+
+<Warning>
+  The hook refreshes every 30 seconds. If you have multiple components using `usePortfolio` with the same address, consider lifting the hook to a parent component and passing data as props to avoid duplicate API calls.
+</Warning>
+
+```javascript
+// Good: Single hook instance
+function App() {
+  const { address } = useWallet();
+  const { portfolio, loading } = usePortfolio(address);
+  
+  return (
+    <div>
+      <PortfolioHeader data={portfolio} loading={loading} />
+      <PortfolioCards data={portfolio} loading={loading} />
+      <AIAdvisor portfolio={portfolio} />
+    </div>
+  );
+}
+
+// Bad: Multiple hook instances (3x API calls)
+function App() {
+  return (
+    <div>
+      <PortfolioHeader /> {/* calls usePortfolio */}
+      <PortfolioCards /> {/* calls usePortfolio */}
+      <AIAdvisor /> {/* calls usePortfolio */}
+    </div>
+  );
+}
+```
+
+## Related Hooks
+
+- [useWallet](/api/hooks/use-wallet) - Get connected wallet address
+- [useAIAdvisor](/api/hooks/use-ai-advisor) - Pass portfolio data to AI
+- [useProtocols](/api/hooks/use-protocols) - Browse DeFi protocols
+
+## Related Services
+
+- [Stacks API](/api/stacks-api) - Underlying portfolio data service
+- [AI Service](/api/ai-service) - Uses portfolio data for strategy generation

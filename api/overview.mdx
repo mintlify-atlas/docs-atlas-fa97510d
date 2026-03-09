@@ -1,0 +1,169 @@
+---
+title: 'API Overview'
+description: 'Complete reference for Staxiq services, hooks, and utilities'
+icon: 'book-open'
+---
+
+## Introduction
+
+Staxiq provides a comprehensive set of services and React hooks for building Bitcoin DeFi applications on the Stacks blockchain. The API is organized into services for blockchain interactions and React hooks for state management.
+
+## Architecture
+
+The Staxiq API follows a modular architecture:
+
+<CardGroup cols={2}>
+  <Card title="Services" icon="server" href="/api/ai-service">
+    Core blockchain and AI services for direct function calls
+  </Card>
+  <Card title="React Hooks" icon="react" href="/api/hooks/use-wallet">
+    State management hooks for React components
+  </Card>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    Wallet connection and user session management
+  </Card>
+  <Card title="Protocol Data" icon="database" href="/api/protocol-data">
+    Static protocol information and configurations
+  </Card>
+</CardGroup>
+
+## Core Services
+
+### AI Service
+Generate personalized DeFi strategies using Google's Gemini AI, tailored to user portfolios and risk profiles.
+
+[View AI Service Documentation →](/api/ai-service)
+
+### Contract Service
+Interact with Stacks smart contracts for on-chain profile management, strategy anchoring, and risk profile storage.
+
+[View Contract Service Documentation →](/api/contract-service)
+
+### Stacks API Service
+Fetch real-time blockchain data including STX balances, token balances, transaction history, and market prices.
+
+[View Stacks API Documentation →](/api/stacks-api)
+
+## React Hooks
+
+### useWallet
+Manage wallet connections with automatic network detection and session persistence.
+
+[View useWallet Documentation →](/api/hooks/use-wallet)
+
+### useAIAdvisor
+Access AI-powered strategy generation with loading states and error handling.
+
+[View useAIAdvisor Documentation →](/api/hooks/use-ai-advisor)
+
+### usePortfolio
+Fetch and auto-refresh portfolio data including balances and transaction history.
+
+[View usePortfolio Documentation →](/api/hooks/use-portfolio)
+
+### useProtocols
+Filter and sort protocol data with built-in loading states.
+
+[View useProtocols Documentation →](/api/hooks/use-protocols)
+
+## Quick Start
+
+<CodeGroup>
+```javascript Services
+import { getSTXBalance } from './services/stacksApi';
+import { getAIStrategy } from './services/aiService';
+import { saveRiskProfile } from './services/contractService';
+
+// Fetch balance
+const balance = await getSTXBalance(address);
+
+// Generate strategy
+const strategy = await getAIStrategy({
+  address,
+  stxBalance: '100',
+  totalUSD: '285',
+  riskProfile: 'Balanced',
+  protocols: PROTOCOLS
+});
+
+// Save to chain
+const txid = await saveRiskProfile('Balanced');
+```
+
+```jsx React Hooks
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function MyComponent() {
+  const { address, connected, connectWallet } = useWallet();
+  const { portfolio, loading } = usePortfolio(address);
+  const { strategy, fetchStrategy } = useAIAdvisor({
+    address,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD
+  });
+
+  return (
+    <div>
+      {!connected ? (
+        <button onClick={connectWallet}>Connect Wallet</button>
+      ) : (
+        <div>
+          <p>Balance: {portfolio.stxBalance} STX</p>
+          <button onClick={fetchStrategy}>Get Strategy</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Network Detection
+
+All services automatically detect the appropriate network (testnet/mainnet) based on:
+- Wallet address prefix (`ST` for testnet, `SP` for mainnet)
+- Environment hostname (localhost uses testnet)
+- NetworkContext provider settings
+
+## Error Handling
+
+Services return graceful fallbacks on errors:
+- Balance services return `'0'` on error
+- Transaction history returns empty array `[]`
+- Price services return cached values or sensible defaults
+
+Hooks provide explicit error states:
+```javascript
+const { portfolio, loading, error } = usePortfolio(address);
+if (error) console.error(error);
+```
+
+## Environment Variables
+
+<ParamField path="VITE_GEMINI_API_KEY" type="string" required>
+  Google Gemini API key for AI strategy generation
+</ParamField>
+
+## Type Safety
+
+While Staxiq is written in JavaScript, all functions include JSDoc comments for IDE type hints. TypeScript definitions can be added by creating `.d.ts` files in your project.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Set up wallet authentication
+  </Card>
+  <Card title="AI Service" icon="brain" href="/api/ai-service">
+    Generate AI strategies
+  </Card>
+  <Card title="useWallet Hook" icon="wallet" href="/api/hooks/use-wallet">
+    Connect user wallets
+  </Card>
+  <Card title="Protocol Data" icon="chart-simple" href="/api/protocol-data">
+    Access protocol information
+  </Card>
+</CardGroup>

@@ -1,0 +1,340 @@
+---
+title: 'Authentication'
+description: 'Wallet connection and user session management with Stacks Connect'
+icon: 'lock'
+---
+
+## Overview
+
+Staxiq uses **@stacks/connect** for wallet authentication, providing seamless integration with popular Stacks wallets like Leather, Xverse, and Asigna. Authentication persists across sessions using the UserSession API.
+
+## Authentication Flow
+
+The authentication system is managed through the `useWallet` hook, which handles:
+- Wallet connection prompts
+- Session persistence
+- Network detection (testnet/mainnet)
+- Address extraction
+- Disconnection and cleanup
+
+<Steps>
+  <Step title="Initialize App Config">
+    Configure app permissions and create a UserSession instance.
+    
+    ```javascript
+    import { AppConfig, UserSession } from '@stacks/connect';
+    
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    const userSession = new UserSession({ appConfig });
+    ```
+  </Step>
+  
+  <Step title="Trigger Authentication">
+    Call the `authenticate` function with app details and callbacks.
+    
+    ```javascript
+    import { authenticate } from '@stacks/connect';
+    
+    authenticate({
+      userSession,
+      appDetails: {
+        name: 'Staxiq',
+        icon: window.location.origin + '/favicon.ico',
+      },
+      onFinish: (payload) => {
+        const userData = payload.userSession.loadUserData();
+        const address = userData?.profile?.stxAddress?.mainnet;
+        // Handle successful connection
+      },
+      onCancel: () => {
+        // Handle user cancellation
+      },
+    });
+    ```
+  </Step>
+  
+  <Step title="Check Existing Session">
+    On app load, check if user is already authenticated.
+    
+    ```javascript
+    if (userSession.isUserSignedIn()) {
+      const userData = userSession.loadUserData();
+      const address = userData?.profile?.stxAddress?.mainnet;
+      // User is already connected
+    }
+    ```
+  </Step>
+  
+  <Step title="Handle Disconnection">
+    Sign out and clear session data.
+    
+    ```javascript
+    userSession.signUserOut();
+    window.location.reload(); // Refresh to reset app state
+    ```
+  </Step>
+</Steps>
+
+## Using the useWallet Hook
+
+The recommended way to handle authentication is through the `useWallet` hook:
+
+```jsx
+import { useWallet } from './hooks/useWallet';
+
+function WalletButton() {
+  const { 
+    connected, 
+    address, 
+    shortAddress, 
+    connectWallet, 
+    disconnectWallet, 
+    loading 
+  } = useWallet();
+
+  if (loading) {
+    return <button disabled>Connecting...</button>;
+  }
+
+  if (connected) {
+    return (
+      <div>
+        <span>Connected: {shortAddress(address)}</span>
+        <button onClick={disconnectWallet}>Disconnect</button>
+      </div>
+    );
+  }
+
+  return <button onClick={connectWallet}>Connect Wallet</button>;
+}
+```
+
+[View full useWallet documentation →](/api/hooks/use-wallet)
+
+## Network Detection
+
+Staxiq automatically detects the correct network based on the user's address:
+
+<ParamField path="testnet" type="boolean">
+  Addresses starting with `ST` use testnet
+</ParamField>
+
+<ParamField path="mainnet" type="boolean">
+  Addresses starting with `SP` use mainnet
+</ParamField>
+
+```javascript
+const getStxAddress = (userData) => {
+  return network === 'testnet'
+    ? userData?.profile?.stxAddress?.testnet
+    : userData?.profile?.stxAddress?.mainnet;
+};
+```
+
+## Session Persistence
+
+User sessions are automatically persisted in browser storage. When users return to your app:
+
+```javascript
+useEffect(() => {
+  if (userSession.isUserSignedIn()) {
+    const userData = userSession.loadUserData();
+    const addr = getStxAddress(userData);
+    if (addr) {
+      setAddress(addr);
+      setConnected(true);
+    }
+  }
+}, []);
+```
+
+## App Configuration
+
+### Required Permissions
+
+<ParamField path="store_write" type="string" required>
+  Allows the app to write to Gaia storage (user's decentralized storage)
+</ParamField>
+
+<ParamField path="publish_data" type="string" required>
+  Enables publishing data to the blockchain
+</ParamField>
+
+### App Details
+
+<ParamField path="name" type="string" required>
+  Application name shown in wallet connection prompt
+</ParamField>
+
+<ParamField path="icon" type="string" required>
+  App icon URL displayed during authentication (must be absolute URL)
+</ParamField>
+
+## User Data Structure
+
+After successful authentication, the user data object contains:
+
+<ResponseField name="profile" type="object">
+  User profile information
+  
+  <ResponseField name="stxAddress" type="object">
+    Stacks addresses for different networks
+    
+    <ResponseField name="mainnet" type="string">
+      Mainnet address (starts with `SP`)
+    </ResponseField>
+    
+    <ResponseField name="testnet" type="string">
+      Testnet address (starts with `ST`)
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="username" type="string">
+    BNS username if registered
+  </ResponseField>
+</ResponseField>
+
+## Error Handling
+
+Handle authentication errors gracefully:
+
+```javascript
+try {
+  await authenticate({
+    userSession,
+    appDetails,
+    onFinish: (payload) => {
+      console.log('Authentication successful');
+      console.log('isSignedIn:', payload.userSession.isUserSignedIn());
+    },
+    onCancel: () => {
+      console.log('User cancelled authentication');
+      setLoading(false);
+    },
+  });
+} catch (error) {
+  console.error('Authentication error:', error);
+  setLoading(false);
+}
+```
+
+## Logout Flow
+
+Properly clean up user sessions on logout:
+
+```javascript
+function disconnectWallet() {
+  try {
+    userSession.signUserOut();
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+  setConnected(false);
+  setAddress(null);
+  window.location.reload();
+}
+```
+
+<Note>
+  The page reload ensures all components and contexts are reset to their unauthenticated state.
+</Note>
+
+## Address Formatting
+
+Utility function to display shortened addresses:
+
+```javascript
+function shortAddress(addr) {
+  if (!addr) return '';
+  return `${addr.slice(0, 5)}...${addr.slice(-4)}`;
+}
+
+// Example: "SP2H8...9ABC"
+```
+
+## Complete Example
+
+<CodeGroup>
+```jsx Component Usage
+import { useWallet } from './hooks/useWallet';
+import { useNetwork } from './context/NetworkContext';
+
+function App() {
+  const { connected, address, connectWallet, disconnectWallet } = useWallet();
+  const { network } = useNetwork();
+
+  return (
+    <div>
+      <header>
+        <h1>Staxiq - Bitcoin DeFi Copilot</h1>
+        {connected ? (
+          <div>
+            <span>Network: {network}</span>
+            <span>Address: {address}</span>
+            <button onClick={disconnectWallet}>Disconnect</button>
+          </div>
+        ) : (
+          <button onClick={connectWallet}>Connect Wallet</button>
+        )}
+      </header>
+      
+      {connected && (
+        <main>
+          <Dashboard address={address} />
+        </main>
+      )}
+    </div>
+  );
+}
+```
+
+```javascript Manual Implementation
+import { AppConfig, UserSession, authenticate } from '@stacks/connect';
+
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+const userSession = new UserSession({ appConfig });
+
+export function connectWallet() {
+  return new Promise((resolve, reject) => {
+    authenticate({
+      userSession,
+      appDetails: {
+        name: 'Staxiq',
+        icon: window.location.origin + '/favicon.ico',
+      },
+      onFinish: (payload) => {
+        const userData = payload.userSession.loadUserData();
+        const address = userData?.profile?.stxAddress?.mainnet;
+        resolve({ address, userData });
+      },
+      onCancel: () => {
+        reject(new Error('User cancelled authentication'));
+      },
+    });
+  });
+}
+```
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Loading States" icon="spinner">
+    Always show loading indicators during wallet connection to improve UX
+  </Card>
+  <Card title="Error Recovery" icon="triangle-exclamation">
+    Provide clear error messages and retry options for failed connections
+  </Card>
+  <Card title="Session Checking" icon="clock">
+    Check for existing sessions on app load to auto-reconnect users
+  </Card>
+  <Card title="Clean Logout" icon="right-from-bracket">
+    Always call signUserOut() and reload to prevent state inconsistencies
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+- [useWallet Hook Reference](/api/hooks/use-wallet)
+- [Contract Service Documentation](/api/contract-service)
+- [Stacks Connect Documentation](https://connect.stacks.js.org/)

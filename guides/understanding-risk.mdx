@@ -1,0 +1,549 @@
+---
+title: Understanding Risk in Bitcoin DeFi
+description: Learn how to assess and manage risks when using DeFi protocols on Stacks
+---
+
+## Overview
+
+Every DeFi protocol involves risk. Understanding these risks is crucial for making informed decisions and protecting your Bitcoin. This guide explains the risk framework used by Staxiq and how to evaluate protocol safety.
+
+<Warning>
+**Important**: No DeFi investment is completely risk-free. Always invest only what you can afford to lose and do your own research.
+</Warning>
+
+## Staxiq Risk Framework
+
+Staxiq categorizes protocols into three risk levels:
+
+```javascript
+export const RISK_STYLES = {
+  Low: 'text-green-500',     // Conservative, proven protocols
+  Medium: 'text-yellow-500', // Moderate risk/reward balance
+  High: 'text-red-500',      // Aggressive, complex strategies
+};
+```
+
+### Risk Level Definitions
+
+<CardGroup cols={3}>
+  <Card title="Low Risk" icon="shield-check" color="#22c55e">
+    **Protocols**: Zest, StackingDAO, Granite
+    
+    - Established track records
+    - Simple mechanics
+    - Over-collateralization
+    - Multiple audits
+  </Card>
+  
+  <Card title="Medium Risk" icon="shield-halved" color="#f59e0b">
+    **Protocols**: ALEX Lab, Bitflow, Velar
+    
+    - Liquidity provision risks
+    - Market volatility exposure
+    - Complex but proven
+    - Some audit coverage
+  </Card>
+  
+  <Card title="High Risk" icon="shield-exclamation" color="#ef4444">
+    **Protocols**: Hermetica
+    
+    - Newer protocols
+    - Complex mechanisms
+    - Multiple dependencies
+    - Higher potential returns
+  </Card>
+</CardGroup>
+
+## Types of DeFi Risks
+
+### Smart Contract Risk
+
+**What it is**: Bugs or vulnerabilities in protocol code that could be exploited.
+
+**Indicators of lower risk**:
+- Multiple professional audits from reputable firms
+- Open-source code reviewed by the community
+- Bug bounty programs
+- Long operational history without incidents
+
+**Mitigation strategies**:
+```javascript
+// Check protocol audit status
+const protocolSafety = {
+  audits: ['CertiK', 'Trail of Bits'],  // Multiple auditors = better
+  codeAge: '18+ months',                 // Battle-tested over time
+  bugBounty: 'Active',                   // Incentivizes security research
+  tvl: '$50M+',                          // More value = more scrutiny
+};
+```
+
+<Tip>
+Protocols with $50M+ TVL for over 6 months have generally been stress-tested by users and potential attackers.
+</Tip>
+
+### Liquidity Risk
+
+**What it is**: Inability to exit your position quickly without significant price impact.
+
+**Common in**:
+- Small DEX pools
+- Newer protocols
+- Low-TVL lending markets
+
+**Example from Staxiq protocols**:
+```javascript
+const liquidityComparison = [
+  { name: 'ALEX Lab', tvl: '$124.5M', liquidity: 'Excellent' },
+  { name: 'Bitflow', tvl: '$31.7M', liquidity: 'Good' },
+  { name: 'Velar', tvl: '$431K', liquidity: 'Limited' },  // Higher slippage risk
+];
+```
+
+**Mitigation strategies**:
+- Prioritize protocols with TVL > $20M
+- Test small exits before committing large amounts
+- Avoid protocols where your deposit would be >5% of TVL
+
+### Impermanent Loss (IL)
+
+**What it is**: Loss experienced by liquidity providers when token prices diverge.
+
+**Applies to**: DEX protocols (ALEX, Bitflow, Velar)
+
+**How it works**:
+```javascript
+// Example: You provide liquidity to sBTC/STX pool
+const initialDeposit = {
+  sBTC: 1,        // Worth $60,000
+  STX: 30000,     // Worth $60,000 (at $2/STX)
+  total: '$120,000'
+};
+
+// Later: STX price doubles to $4
+const afterPriceChange = {
+  sBTC: 0.707,    // Pool rebalanced
+  STX: 21213,     // Pool rebalanced
+  total: '$127,277',  // Pool value
+};
+
+const impermanentLoss = {
+  poolValue: '$127,277',
+  holdValue: '$180,000',  // If you had just held
+  loss: '-$52,723',       // IL from price divergence
+  note: 'Trading fees may offset this loss'
+};
+```
+
+<Note>
+Impermanent loss is temporary and may be offset by trading fees. It becomes permanent only when you withdraw.
+</Note>
+
+**Mitigation strategies**:
+- Provide liquidity to stable pairs (e.g., stablecoins)
+- Monitor price divergence closely
+- Ensure APY from fees > potential IL
+- Use protocols with high trading volume (more fees)
+
+### Collateralization Risk
+
+**What it is**: Risk of liquidation if your collateral value drops below protocol thresholds.
+
+**Applies to**: Lending protocols (Zest, Granite)
+
+**Example**:
+```javascript
+// You borrow stablecoins against sBTC collateral
+const loanPosition = {
+  collateral: '1 sBTC',           // Worth $60,000
+  borrowed: '30,000 USDA',        // Stablecoin
+  collateralRatio: '200%',        // 2x over-collateralized
+  liquidationThreshold: '150%',   // Will liquidate if ratio drops here
+};
+
+// BTC price drops to $45,000
+const afterPriceDrop = {
+  collateral: '1 sBTC',           // Now worth $45,000
+  borrowed: '30,000 USDA',        // Still owed
+  collateralRatio: '150%',        // At liquidation threshold!
+  risk: 'IMMEDIATE LIQUIDATION RISK'
+};
+```
+
+**Mitigation strategies**:
+- Maintain high collateralization ratios (>200%)
+- Set price alerts for your collateral assets
+- Keep extra collateral ready to deposit
+- Borrow conservatively (< 50% of max)
+
+### Protocol Dependency Risk
+
+**What it is**: Risk from relying on other protocols or oracles.
+
+**Example from Staxiq**:
+```javascript
+const protocolDependencies = {
+  Hermetica: {
+    dependencies: ['Price oracle', 'sBTC bridge', 'Liquidation engine'],
+    riskLevel: 'High',
+    reason: 'Multiple points of failure'
+  },
+  Zest: {
+    dependencies: ['Price oracle'],
+    riskLevel: 'Low',
+    reason: 'Simple, direct lending'
+  }
+};
+```
+
+<Warning>
+The more dependencies a protocol has, the more potential points of failure exist.
+</Warning>
+
+## AI Copilot Risk Profiles
+
+When using the [AI Copilot](/guides/using-ai-copilot), your chosen risk profile affects recommendations:
+
+### HODLer Risk Profile
+
+```javascript
+const hodlerProfile = {
+  label: 'HODLer',
+  color: '#22c55e',
+  focus: 'Capital preservation',
+  recommendedProtocols: ['Zest', 'StackingDAO', 'Granite'],
+  avoidedProtocols: ['Hermetica', 'High-leverage strategies'],
+  targetAPY: '7-10%',
+  acceptableRisk: 'Low'
+};
+```
+
+**User context from AI**:
+```javascript
+const userContext = `
+IMPORTANT: This is a BRAND NEW user to Stacks DeFi.
+They may not understand DeFi concepts yet.
+Be extra welcoming, explain terms simply,
+and recommend the safest starting point.
+`;
+```
+
+### Builder Risk Profile
+
+```javascript
+const builderProfile = {
+  label: 'Builder',
+  color: '#f59e0b',
+  focus: 'Balanced growth',
+  recommendedProtocols: ['ALEX', 'Zest', 'Bitflow', 'StackingDAO'],
+  strategy: 'Diversified across risk levels',
+  targetAPY: '10-15%',
+  acceptableRisk: 'Medium'
+};
+```
+
+**Strategy example**:
+```javascript
+const builderAllocation = {
+  'ALEX Lab (DEX)': '40%',       // Medium risk, 15.1% APY
+  'Zest (Lending)': '30%',       // Low risk, 8.2% APY
+  'Bitflow (DEX)': '20%',        // Medium risk, 12.4% APY
+  'StackingDAO': '10%',          // Low risk, 9.5% APY
+  blendedAPY: '12.3%',
+  blendedRisk: 'Medium'
+};
+```
+
+### Degen Risk Profile
+
+```javascript
+const degenProfile = {
+  label: 'Degen',
+  color: '#ef4444',
+  focus: 'Maximum yield',
+  recommendedProtocols: ['Hermetica', 'High-APY pools', 'Leveraged strategies'],
+  warningLevel: 'High',
+  targetAPY: '15-25%+',
+  acceptableRisk: 'High'
+};
+```
+
+**User context from AI**:
+```javascript
+const experiencedUserContext = `
+IMPORTANT: This is an EXPERIENCED DeFi user with ${strategyCount} strategies anchored.
+Skip basics, give advanced multi-protocol strategies,
+mention yield optimization and compounding tactics.
+`;
+```
+
+<Warning>
+Degen profile is ONLY for experienced users who understand and accept high-risk protocols.
+</Warning>
+
+## Evaluating Protocol Safety
+
+<Steps>
+  <Step title="Check Staxiq Risk Rating">
+    Start with the color-coded risk badge on each protocol card:
+    
+    ```jsx
+    <span className={`risk-badge ${RISK_STYLES[protocol.risk]}`}>
+      {protocol.risk}
+    </span>
+    ```
+  </Step>
+  
+  <Step title="Review TVL">
+    Higher TVL indicates more user trust and battle-testing:
+    
+    ```javascript
+    if (protocol.tvl > '$50M') {
+      riskReduction = 'Significant';  // Well-established
+    } else if (protocol.tvl > '$20M') {
+      riskReduction = 'Moderate';     // Proven but smaller
+    } else {
+      riskReduction = 'Limited';      // Newer or niche
+    }
+    ```
+  </Step>
+  
+  <Step title="Check Protocol Age">
+    Longer operational history = more proven:
+    
+    - **18+ months**: Battle-tested through market cycles
+    - **6-18 months**: Established but less proven
+    - **< 6 months**: Newer, higher uncertainty
+  </Step>
+  
+  <Step title="Research Audits">
+    Visit the protocol website and check:
+    
+    - Number of audits (2+ is better)
+    - Auditor reputation (CertiK, Trail of Bits, etc.)
+    - Audit date (within last 12 months?)
+    - Known vulnerabilities and fixes
+  </Step>
+  
+  <Step title="Read the Documentation">
+    Understand exactly how the protocol works:
+    
+    - What happens to your deposited assets?
+    - How are yields generated?
+    - What are the withdrawal conditions?
+    - What could cause loss of funds?
+  </Step>
+  
+  <Step title="Start Small">
+    Test with a small amount first:
+    
+    ```javascript
+    const testStrategy = {
+      initialDeposit: '1-5% of portfolio',
+      monitoringPeriod: '1-2 weeks',
+      scaleUp: 'Only after successful test',
+    };
+    ```
+  </Step>
+</Steps>
+
+## Risk Management Strategies
+
+### Diversification
+
+Spread risk across multiple protocols:
+
+```javascript
+const diversifiedPortfolio = {
+  strategy: 'Spread across 3-5 protocols',
+  example: {
+    'Zest (Low risk)': '30%',
+    'ALEX (Medium risk)': '25%',
+    'StackingDAO (Low risk)': '20%',
+    'Bitflow (Medium risk)': '15%',
+    'Hermetica (High risk)': '10%',
+  },
+  benefit: 'Single protocol failure affects only portion of portfolio'
+};
+```
+
+### Position Sizing
+
+Never overexpose to any single protocol:
+
+```javascript
+const positionSizing = {
+  lowRisk: 'Up to 40% of portfolio',
+  mediumRisk: 'Up to 25% of portfolio',
+  highRisk: 'Maximum 10% of portfolio',
+  rule: 'Higher risk = smaller position size'
+};
+```
+
+### Monitoring and Rebalancing
+
+Regularly review your positions:
+
+```javascript
+const monitoringSchedule = {
+  daily: ['Collateralization ratios for loans'],
+  weekly: ['Protocol APYs', 'TVL changes', 'Position values'],
+  monthly: ['Overall portfolio performance', 'Rebalancing needs'],
+  immediately: ['Protocol announcements', 'Security incidents', 'Market crashes']
+};
+```
+
+### Exit Planning
+
+Have a plan before entering:
+
+```javascript
+const exitStrategy = {
+  profitTarget: 'Take profits at +20% gain',
+  stopLoss: 'Exit if protocol TVL drops >50%',
+  timeHorizon: '3-6 months minimum',
+  emergencyExit: 'Know withdrawal process and timeframes'
+};
+```
+
+## Red Flags to Watch For
+
+<Warning>
+Consider exiting or avoiding protocols with these warning signs:
+
+- **Sudden TVL drops** (>30% in a week)
+- **Anonymous team** with no reputation
+- **No audits** or failed audits
+- **Unrealistic APY** (>50% with low risk claims)
+- **Complex tokenomics** you don't understand
+- **Centralization** (admin keys, multisig issues)
+- **Poor documentation** or lack of transparency
+- **Recent exploits** or security incidents
+</Warning>
+
+## Getting AI Risk Assessments
+
+The Staxiq AI Copilot includes risk warnings in every strategy:
+
+```javascript
+// AI prompt includes risk analysis
+const aiResponse = `
+⚠️ KEY RISK: [Most important risk to monitor]
+
+🛡️ IS IT SAFE?: [One sentence on risk, reassuring but honest]
+`;
+```
+
+Example AI risk assessment:
+```
+⚠️ KEY RISK
+Impermanent loss if STX price increases significantly faster than sBTC.
+Monitor the price ratio weekly and consider exiting if divergence exceeds 20%.
+
+🛡️ IS IT SAFE?
+ALEX is the most established DEX on Stacks with $124.5M TVL and multiple audits.
+As long as you understand impermanent loss, it's a solid medium-risk choice.
+```
+
+## Protocol-Specific Risk Breakdown
+
+### Zest Protocol (Low Risk)
+
+```javascript
+{
+  smartContractRisk: 'Low - Multiple audits, 18+ months operational',
+  liquidityRisk: 'Low - $48.2M TVL, high liquidity',
+  mechanismRisk: 'Low - Simple over-collateralized lending',
+  dependencyRisk: 'Low - Minimal external dependencies',
+  overallRisk: 'Low',
+  suitableFor: 'Conservative investors, DeFi beginners'
+}
+```
+
+### ALEX Lab (Medium Risk)
+
+```javascript
+{
+  smartContractRisk: 'Low-Medium - Audited, well-established',
+  liquidityRisk: 'Very Low - $124.5M TVL, highest on Stacks',
+  mechanismRisk: 'Medium - Impermanent loss in LP positions',
+  dependencyRisk: 'Low - Self-contained DEX',
+  overallRisk: 'Medium',
+  suitableFor: 'Experienced DeFi users comfortable with IL'
+}
+```
+
+### Hermetica (High Risk)
+
+```javascript
+{
+  smartContractRisk: 'Medium-High - Newer protocol, complex code',
+  liquidityRisk: 'Medium - $9.8M TVL, growing but smaller',
+  mechanismRisk: 'High - Synthetic assets, multiple mechanisms',
+  dependencyRisk: 'High - Relies on oracles, sBTC bridge, liquidations',
+  overallRisk: 'High',
+  suitableFor: 'Advanced users only, small position sizes'
+}
+```
+
+## Learning from User Experience
+
+Staxiq tracks your DeFi experience:
+
+```javascript
+const isNewUser = strategyCount === 0 && txCount < 3;
+const isExperienced = strategyCount > 5 || txCount > 20;
+```
+
+**New users** receive:
+- Extra risk explanations
+- Conservative recommendations only
+- Educational content
+- Simple, single-protocol strategies
+
+**Experienced users** receive:
+- Advanced risk/reward optimization
+- Multi-protocol strategies
+- Compounding tactics
+- Assumes understanding of key concepts
+
+## Best Practices Summary
+
+<CardGroup cols={2}>
+  <Card title="Start Conservative" icon="seedling">
+    Begin with Low risk protocols (Zest, StackingDAO) regardless of experience
+  </Card>
+  
+  <Card title="Understand Completely" icon="graduation-cap">
+    Never invest in a protocol you don't fully understand
+  </Card>
+  
+  <Card title="Size Appropriately" icon="ruler">
+    Higher risk = smaller position size
+  </Card>
+  
+  <Card title="Monitor Actively" icon="eye">
+    Check positions weekly, rebalance monthly
+  </Card>
+  
+  <Card title="Diversify Always" icon="chart-network">
+    Spread across 3-5 protocols and risk levels
+  </Card>
+  
+  <Card title="Keep Learning" icon="book-open">
+    DeFi evolves rapidly—stay informed
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+With risk understanding:
+
+- [Use the AI Copilot](/guides/using-ai-copilot) for risk-appropriate strategy recommendations
+- [Compare protocols](/guides/comparing-protocols) with risk in mind
+- [Analyze your portfolio](/guides/analyzing-portfolio) to assess current risk exposure
+
+## Related Resources
+
+- [Using the AI Copilot](/guides/using-ai-copilot)
+- [Comparing DeFi Protocols](/guides/comparing-protocols)
+- [API Reference: Protocol Data](/api/protocol-data)

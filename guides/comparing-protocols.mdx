@@ -1,0 +1,585 @@
+---
+title: Comparing DeFi Protocols
+description: Learn how to evaluate and compare Bitcoin DeFi protocols on Stacks to find the best yields and risk profiles
+---
+
+## Overview
+
+Staxiq aggregates data from all major DeFi protocols on Stacks, allowing you to compare APYs, TVL, risk levels, and features in one place. This guide teaches you how to effectively compare protocols to make informed decisions.
+
+## Protocol Dashboard
+
+The protocol comparison dashboard displays:
+
+<CardGroup cols={2}>
+  <Card title="Real-time APY" icon="percent">
+    Current annual percentage yields from DeFi Llama
+  </Card>
+  
+  <Card title="TVL (Total Value Locked)" icon="vault">
+    Total assets secured in each protocol
+  </Card>
+  
+  <Card title="Risk Rating" icon="gauge-high">
+    Low, Medium, or High risk classification
+  </Card>
+  
+  <Card title="Asset Support" icon="coins">
+    Which assets each protocol accepts (STX, sBTC, etc.)
+  </Card>
+</CardGroup>
+
+## Available Protocols
+
+Staxiq tracks these major Stacks DeFi protocols:
+
+```javascript
+export const PROTOCOLS = [
+  {
+    id: 'zest',
+    name: 'Zest Protocol',
+    type: 'Lending',
+    apy: '8.2',
+    tvl: '$48.2M',
+    asset: 'sBTC',
+    risk: 'Low',
+    description: 'Lend and borrow Bitcoin-backed assets with transparent on-chain rates.',
+    url: 'https://zestprotocol.com',
+  },
+  {
+    id: 'alex',
+    name: 'ALEX Lab',
+    type: 'DEX',
+    apy: '15.1',
+    tvl: '$124.5M',
+    asset: 'sBTC/STX',
+    risk: 'Medium',
+    description: 'The leading Bitcoin DeFi super app — swap, earn, and launch on Stacks.',
+    url: 'https://alexlab.co',
+  },
+  {
+    id: 'hermetica',
+    name: 'Hermetica',
+    type: 'Yield',
+    apy: '18.7',
+    tvl: '$9.8M',
+    asset: 'sBTC',
+    risk: 'High',
+    description: 'Bitcoin-backed synthetic dollar yielding protocol built on Stacks.',
+    url: 'https://hermetica.fi',
+  },
+  // ... more protocols
+];
+```
+
+## Filtering Protocols
+
+### By Protocol Type
+
+Filter protocols by category:
+
+```javascript
+export const FILTER_TYPES = ['All', 'Lending', 'DEX', 'Yield', 'Stacking'];
+```
+
+```jsx
+<div className="flex gap-1.5">
+  {FILTER_TYPES.map(type => (
+    <button
+      onClick={() => setFilter(type)}
+      style={{
+        background: filter === type
+          ? 'linear-gradient(135deg, #F7931A, #e8820a)'
+          : isDark ? '#141c2e' : '#f1f5ff',
+        color: filter === type ? '#ffffff' : '#8899bb',
+      }}
+    >
+      {type}
+    </button>
+  ))}
+</div>
+```
+
+<Steps>
+  <Step title="Click Protocol Type">
+    Click **Lending**, **DEX**, **Yield**, or **Stacking** to filter:
+    
+    ```javascript
+    protocols.filter(protocol => 
+      filter === 'All' || protocol.type === filter
+    )
+    ```
+  </Step>
+  
+  <Step title="View Filtered Results">
+    Only protocols matching the selected type will display.
+  </Step>
+  
+  <Step title="Reset with 'All'">
+    Click **All** to show all protocols again.
+  </Step>
+</Steps>
+
+### Protocol Type Definitions
+
+<CardGroup cols={2}>
+  <Card title="Lending" icon="building-columns">
+    **Protocols**: Zest, Granite
+    
+    Lend your Bitcoin/STX to earn interest, or borrow against collateral
+  </Card>
+  
+  <Card title="DEX" icon="right-left">
+    **Protocols**: ALEX, Bitflow, Velar
+    
+    Decentralized exchanges for swapping and providing liquidity
+  </Card>
+  
+  <Card title="Yield" icon="chart-line">
+    **Protocols**: Hermetica
+    
+    Yield farming and synthetic asset protocols with higher returns
+  </Card>
+  
+  <Card title="Stacking" icon="layer-group">
+    **Protocols**: StackingDAO
+    
+    Liquid stacking solutions to earn Bitcoin while maintaining liquidity
+  </Card>
+</CardGroup>
+
+## Understanding Protocol Cards
+
+Each protocol card displays key metrics:
+
+```jsx
+<div className="bg-[#0a0e1a]/90 border rounded-xl p-3">
+  {/* Logo and Name */}
+  <div className="flex items-center">
+    <img src={protocol.logo} className="w-5 h-5" />
+    <h3 className="font-bold">{protocol.name}</h3>
+    <span className="risk-badge">{protocol.risk}</span>
+  </div>
+  
+  {/* APY Display */}
+  <div className="flex items-end gap-1.5">
+    <span className="text-2xl font-black text-orange-500">
+      {protocol.apyDisplay}
+    </span>
+    <div className="trend-indicator">↑</div>
+  </div>
+  
+  {/* Asset and TVL */}
+  <div className="flex justify-between">
+    <div>
+      <span className="text-[#4a5a7a]">Asset</span>
+      <span className="font-bold">{protocol.asset}</span>
+    </div>
+    <div>
+      <span className="text-[#4a5a7a]">TVL</span>
+      <span className="font-bold font-mono">{protocol.tvl}</span>
+    </div>
+  </div>
+  
+  {/* Description */}
+  <p className="text-xs text-[#8899bb]">{protocol.description}</p>
+  
+  {/* CTA Button */}
+  <a href={protocol.url} target="_blank">
+    View Strategy
+  </a>
+</div>
+```
+
+## Key Metrics Explained
+
+### APY (Annual Percentage Yield)
+
+**What it means**: The annualized return you can expect from depositing assets.
+
+```javascript
+// APY is fetched from DeFi Llama and updated regularly
+const { protocols } = useProtocolData();
+
+useEffect(() => {
+  async function load() {
+    const data = await fetchAllProtocolData();
+    setProtocols(data);
+  }
+  load();
+  // Refresh every 5 minutes
+  const interval = setInterval(load, 5 * 60 * 1000);
+}, []);
+```
+
+**How to interpret**:
+- **7-10% APY**: Conservative, stable returns (Lending protocols)
+- **10-15% APY**: Moderate risk/reward (DEX liquidity pools)
+- **15-25%+ APY**: Higher risk, higher potential returns (Yield protocols)
+
+<Note>
+APY rates are variable and change based on protocol utilization and market conditions. Always check the protocol's website for current rates.
+</Note>
+
+### TVL (Total Value Locked)
+
+**What it means**: The total amount of assets currently deposited in the protocol.
+
+**Why it matters**:
+- **Higher TVL** = More user trust, better liquidity, lower slippage
+- **Lower TVL** = Potentially higher risk, but sometimes better opportunities
+
+```javascript
+// Example TVL comparison
+const protocols = [
+  { name: 'ALEX Lab', tvl: '$124.5M' },      // Largest, most established
+  { name: 'StackingDAO', tvl: '$89.3M' },    // Large, trusted
+  { name: 'Zest Protocol', tvl: '$48.2M' },  // Medium-sized
+  { name: 'Hermetica', tvl: '$9.8M' },       // Smaller, newer
+];
+```
+
+<Tip>
+A protocol with $50M+ TVL is generally considered established and battle-tested on Stacks.
+</Tip>
+
+### Risk Rating
+
+Protocols are categorized into three risk levels:
+
+```javascript
+export const RISK_STYLES = {
+  Low: 'text-green-500',
+  Medium: 'text-yellow-500',
+  High: 'text-red-500',
+};
+```
+
+#### Low Risk (Green)
+
+**Characteristics**:
+- Over-collateralized lending
+- Established protocols with long track records
+- Simple, audited smart contracts
+- Conservative APY (7-10%)
+
+**Examples**: Zest Protocol, StackingDAO, Granite
+
+#### Medium Risk (Yellow)
+
+**Characteristics**:
+- DEX liquidity provision (impermanent loss risk)
+- Moderate complexity
+- Proven but evolving protocols
+- Balanced APY (10-15%)
+
+**Examples**: ALEX Lab, Bitflow, Velar
+
+#### High Risk (Red)
+
+**Characteristics**:
+- Complex strategies (synthetic assets, leverage)
+- Newer protocols or experimental features
+- Multiple smart contract interactions
+- High APY (15-25%+)
+
+**Examples**: Hermetica
+
+<Warning>
+High risk doesn't mean "bad"—it means you need to understand the protocol deeply before depositing significant funds.
+</Warning>
+
+## Comparing Protocols: Step-by-Step
+
+<Steps>
+  <Step title="Identify Your Goal">
+    What are you trying to achieve?
+    
+    - **Stable yield**: Focus on Low risk, Lending protocols
+    - **Maximum APY**: Consider Medium/High risk, Yield protocols
+    - **Liquidity provision**: Look at DEX protocols
+    - **Liquid stacking**: Check Stacking protocols
+  </Step>
+  
+  <Step title="Filter by Type">
+    Use the filter buttons to narrow down protocols:
+    
+    ```javascript
+    setFilter('Lending');  // Shows only lending protocols
+    setFilter('DEX');      // Shows only DEX protocols
+    ```
+  </Step>
+  
+  <Step title="Compare APY vs. Risk">
+    Look at the APY-to-risk ratio:
+    
+    ```javascript
+    // Good risk-adjusted returns:
+    { name: 'Zest', apy: '8.2%', risk: 'Low', ratio: 'Excellent' }
+    { name: 'ALEX', apy: '15.1%', risk: 'Medium', ratio: 'Good' }
+    
+    // Higher APY, higher risk:
+    { name: 'Hermetica', apy: '18.7%', risk: 'High', ratio: 'Aggressive' }
+    ```
+  </Step>
+  
+  <Step title="Check TVL for Security">
+    Prioritize protocols with higher TVL for better security:
+    
+    ```javascript
+    // More battle-tested:
+    protocols.filter(p => parseFloat(p.tvl) > 50_000_000)
+    ```
+  </Step>
+  
+  <Step title="Review Asset Compatibility">
+    Make sure the protocol accepts your assets:
+    
+    - **STX holders**: StackingDAO, ALEX (STX pairs)
+    - **sBTC holders**: Zest, Hermetica, ALEX (sBTC pairs)
+    - **Both**: ALEX, Bitflow (LP pairs)
+  </Step>
+  
+  <Step title="Click 'View Strategy'">
+    Visit the protocol's website to learn more and execute:
+    
+    ```jsx
+    <a
+      href={protocol.url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      View Strategy
+    </a>
+    ```
+  </Step>
+</Steps>
+
+## Protocol-Specific Insights
+
+### Zest Protocol (Lending)
+
+```javascript
+{
+  apy: '8.2%',
+  tvl: '$48.2M',
+  asset: 'sBTC',
+  risk: 'Low'
+}
+```
+
+**Best for**: Conservative sBTC holders wanting stable yield
+
+**How it works**: Lend your sBTC to borrowers, earn interest from loan repayments
+
+**Considerations**: Over-collateralized loans minimize risk but cap APY
+
+### ALEX Lab (DEX)
+
+```javascript
+{
+  apy: '15.1%',
+  tvl: '$124.5M',
+  asset: 'sBTC/STX',
+  risk: 'Medium'
+}
+```
+
+**Best for**: Users wanting to provide liquidity and earn trading fees
+
+**How it works**: Deposit paired assets (e.g., sBTC + STX) into liquidity pools
+
+**Considerations**: Impermanent loss risk if token prices diverge significantly
+
+### StackingDAO (Stacking)
+
+```javascript
+{
+  apy: '9.5%',
+  tvl: '$89.3M',
+  asset: 'STX',
+  risk: 'Low'
+}
+```
+
+**Best for**: STX holders wanting to earn Bitcoin while keeping liquidity
+
+**How it works**: Stack your STX to earn BTC rewards, receive liquid stSTX tokens
+
+**Considerations**: stSTX may trade at a slight discount/premium to STX
+
+### Hermetica (Yield)
+
+```javascript
+{
+  apy: '18.7%',
+  tvl: '$9.8M',
+  asset: 'sBTC',
+  risk: 'High'
+}
+```
+
+**Best for**: Risk-tolerant users seeking maximum yield
+
+**How it works**: Deposit sBTC to mint USDh (synthetic dollar), earn yield on both
+
+**Considerations**: Complex mechanism, newer protocol, smart contract risk
+
+## Live Data Updates
+
+Protocol data is fetched from DeFi Llama:
+
+```javascript
+export function useProtocolData() {
+  const [protocols, setProtocols] = useState(PROTOCOL_META);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await fetchAllProtocolData();
+        setProtocols(data);
+        setLastUpdated(new Date());
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+    
+    load();
+    
+    // Refresh every 5 minutes
+    const interval = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return { protocols, loading, error, lastUpdated };
+}
+```
+
+<Note>
+Data refreshes every 5 minutes automatically. You'll always see near real-time APY and TVL figures.
+</Note>
+
+## Making Your Decision
+
+### Decision Matrix
+
+Use this framework to choose:
+
+| Your Priority | Recommended Protocols | Why |
+|---------------|----------------------|-----|
+| **Safety First** | Zest, StackingDAO, Granite | Low risk, audited, proven track records |
+| **Balanced Returns** | ALEX, Bitflow | Medium risk/reward, liquid markets |
+| **Maximum Yield** | Hermetica | High APY, accept higher risk |
+| **Keep Liquidity** | StackingDAO | Earn yield + maintain liquid tokens |
+| **Diversification** | Mix of 2-3 protocols | Spread risk across categories |
+
+### Portfolio Allocation Examples
+
+**Conservative Portfolio** (HODLer):
+```javascript
+{
+  'Zest Protocol': '60%',      // Lending, 8.2% APY
+  'StackingDAO': '30%',        // Stacking, 9.5% APY
+  'Granite': '10%',            // Borrowing reserve
+  expectedAPY: '8.5%',
+  riskLevel: 'Low'
+}
+```
+
+**Balanced Portfolio** (Builder):
+```javascript
+{
+  'ALEX Lab': '40%',           // DEX, 15.1% APY
+  'Zest Protocol': '30%',      // Lending, 8.2% APY
+  'Bitflow': '20%',            // DEX, 12.4% APY
+  'StackingDAO': '10%',        // Stacking, 9.5% APY
+  expectedAPY: '12.3%',
+  riskLevel: 'Medium'
+}
+```
+
+**Aggressive Portfolio** (Degen):
+```javascript
+{
+  'Hermetica': '50%',          // Yield, 18.7% APY
+  'ALEX Lab': '30%',           // DEX, 15.1% APY
+  'Velar': '20%',              // DEX, 11.3% APY
+  expectedAPY: '16.2%',
+  riskLevel: 'High'
+}
+```
+
+## Troubleshooting
+
+### Protocol Data Not Loading
+
+If protocol cards show loading skeletons indefinitely:
+
+```jsx
+{loading && (
+  <div className="animate-pulse">
+    <div className="bg-[#141c2e] h-24"></div>
+  </div>
+)}
+```
+
+**Solutions**:
+1. Check your internet connection
+2. Verify DeFi Llama API is accessible
+3. Wait a few seconds for the 5-minute refresh cycle
+4. Refresh the page manually
+
+### No Protocols Match Filter
+
+```jsx
+{protocols.filter(p => filter === 'All' || p.type === filter).length === 0 && (
+  <div className="col-span-full text-center">
+    <p>No protocols found matching this filter.</p>
+  </div>
+)}
+```
+
+This means no protocols exist in that category—try a different filter.
+
+### APY Seems Outdated
+
+If APY rates seem stale:
+- Check the `lastUpdated` timestamp
+- Wait for the next 5-minute refresh
+- Visit the protocol's website directly for real-time rates
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Do Your Own Research" icon="magnifying-glass">
+    Always visit protocol websites and read documentation before depositing
+  </Card>
+  
+  <Card title="Start Small" icon="droplet">
+    Test protocols with small amounts before committing large sums
+  </Card>
+  
+  <Card title="Diversify" icon="grid-2">
+    Spread funds across multiple protocols to reduce risk
+  </Card>
+  
+  <Card title="Monitor Regularly" icon="eye">
+    Check your positions weekly—DeFi conditions change rapidly
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+After comparing protocols:
+
+- [Get AI-powered recommendations](/guides/using-ai-copilot) tailored to your portfolio
+- [Understand protocol risks](/guides/understanding-risk) in detail
+- Execute your strategy by visiting protocol websites
+
+## Related Resources
+
+- [API Reference: Protocol Data](/api/protocol-data)
+- [API Reference: Protocols Hook](/api/hooks/use-protocols)
+- [Using the AI Copilot](/guides/using-ai-copilot)
+- [Understanding Risk Profiles](/guides/understanding-risk)

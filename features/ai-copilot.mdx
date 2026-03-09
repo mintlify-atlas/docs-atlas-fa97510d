@@ -1,0 +1,292 @@
+---
+title: 'AI DeFi Copilot'
+description: 'Get personalized Bitcoin DeFi strategies powered by Gemini AI and anchored on Bitcoin'
+icon: 'robot'
+---
+
+## Overview
+
+The AI DeFi Copilot analyzes your portfolio and generates personalized Bitcoin DeFi strategies using Google's Gemini AI. Every strategy is cryptographically hashed and anchored to Bitcoin via Stacks smart contracts, creating an immutable record of AI-generated financial advice.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Personalized Strategies" icon="bullseye">
+    AI analyzes your STX/sBTC balance, risk profile, and transaction history
+  </Card>
+  <Card title="Bitcoin Anchoring" icon="link">
+    Every strategy is hashed and anchored on Bitcoin for provenance
+  </Card>
+  <Card title="Risk Profiles" icon="shield">
+    Choose HODLer (conservative), Builder (balanced), or Degen (aggressive)
+  </Card>
+  <Card title="Protocol Recommendations" icon="chart-network">
+    Get specific allocations across Stacks DeFi protocols with APY projections
+  </Card>
+</CardGroup>
+
+## How It Works
+
+### Strategy Generation Flow
+
+<Steps>
+  <Step title="Select Risk Profile">
+    Choose your preferred risk level:
+    - **HODLer** - Conservative, stable yields (green)
+    - **Builder** - Balanced growth strategy (orange)
+    - **Degen** - High-risk, high-reward (red)
+  </Step>
+  
+  <Step title="AI Analysis">
+    The copilot sends your portfolio data to Gemini AI:
+    ```javascript
+    {
+      address: 'SP2...',
+      stxBalance: 5000,
+      sbtcBalance: 0.05,
+      totalUSD: 4500,
+      riskProfile: 'Builder',
+      protocols: [...], // All Stacks protocols with APY data
+      strategyCount: 3,
+      txCount: 12
+    }
+    ```
+  </Step>
+  
+  <Step title="Strategy Delivery">
+    Receive a structured strategy with:
+    - Allocation percentages across protocols
+    - Projected APY and USD returns
+    - Risk assessment and mitigation
+    - Step-by-step execution plan
+  </Step>
+  
+  <Step title="Bitcoin Anchoring">
+    Strategy is automatically:
+    - Hashed with SHA-256
+    - Anchored to Bitcoin via Stacks contract
+    - Transaction ID returned for verification
+  </Step>
+</Steps>
+
+## Risk Profiles
+
+### HODLer (Conservative)
+
+<Info>
+  **Best for:** Beginners, risk-averse investors, long-term holders  
+  **Focus:** Capital preservation with stable yields (5-10% APY)  
+  **Protocols:** StackingDAO, low-risk lending
+</Info>
+
+Sample strategy for new users:
+```
+👋 WELCOME TO BITCOIN DEFI
+[Warm welcome acknowledging first-time use]
+
+🎯 YOUR FIRST STRATEGY: [Simple recommendation]
+📖 WHAT THIS MEANS: [Plain English explanation]
+💰 WHAT YOU COULD EARN: [Specific projections]
+🛡️ IS IT SAFE?: [Honest risk assessment]
+🚀 HOW TO START: [Step 1, 2, 3]
+```
+
+### Builder (Balanced)
+
+<Note>
+  **Best for:** Active DeFi users, balanced portfolios  
+  **Focus:** Growth with managed risk (10-15% APY)  
+  **Protocols:** Mix of lending, yield, and stacking
+</Note>
+
+### Degen (Aggressive)
+
+<Warning>
+  **Best for:** Experienced traders, high-risk tolerance  
+  **Focus:** Maximum yield (15%+ APY)  
+  **Protocols:** Leveraged positions, new protocols, liquidity provision
+</Warning>
+
+## Strategy Format
+
+For experienced users, strategies include:
+
+```
+🎯 STRATEGY: [Bold one-line recommendation]
+
+📊 ALLOCATION:
+- StackingDAO: 40% ($1,800) - 9.5% APY
+- Velar Finance: 30% ($1,350) - 12% APY  
+- Zest Protocol: 30% ($1,350) - 15% APY
+
+💰 PROJECTED RETURN:
+Weighted APY: 11.8%
+Annual Return: ~$531 USD
+Monthly: ~$44 USD
+
+⚡ OPTIMIZATION:
+[Advanced tactic like compounding, rebalancing, etc.]
+
+⚠️ KEY RISK:
+[Most important risk factor to monitor]
+
+🚀 EXECUTE NOW:
+[Specific next action with protocol name and link]
+```
+
+## Bitcoin Anchoring
+
+Every strategy is permanently recorded on Bitcoin:
+
+1. **Strategy Hashing**
+   ```javascript
+   const encoder = new TextEncoder();
+   const hashBuffer = await crypto.subtle.digest('SHA-256', 
+     encoder.encode(strategy));
+   const hashHex = Array.from(new Uint8Array(hashBuffer))
+     .map(b => b.toString(16).padStart(2, '0'))
+     .join('');
+   ```
+
+2. **Smart Contract Anchoring**
+   ```clarity
+   (define-public (anchor-strategy (hash (buff 32)) (protocol (string-ascii 50)))
+     (ok (map-set strategies 
+       { user: tx-sender, strategy-id: (+ (get-strategy-count tx-sender) u1) }
+       { hash: hash, protocol: protocol, timestamp: block-height })))
+   ```
+
+3. **Verification**
+   - Transaction ID links to Stacks Explorer
+   - Strategy count badge shows total anchored strategies
+   - Immutable proof of AI advice at specific block height
+
+<Tip>
+  **Why anchor on Bitcoin?** Creates an immutable, timestamped record of AI-generated financial advice. This enables:
+  - Strategy performance auditing
+  - AI accountability over time
+  - Proof of recommendations for tax/regulatory purposes
+</Tip>
+
+## User Personalization
+
+The AI adapts recommendations based on:
+
+### New Users (0 strategies, fewer than 3 transactions)
+- Extra welcoming tone
+- Simplified explanations of DeFi concepts
+- Single protocol recommendation
+- Safety-first approach
+- Step-by-step guidance
+
+### Experienced Users (5+ strategies, 20+ transactions)
+- Skip basic explanations
+- Multi-protocol diversification
+- Advanced optimization tactics
+- Compound yield strategies
+- Bold, confident recommendations
+
+## Code Reference
+
+Key implementation files:
+- **Component:** `src/components/AICopilot.jsx` - Main UI and logic
+- **Service:** `src/services/aiService.js` - Gemini API integration
+- **Contract:** `src/services/contractService.js` - Bitcoin anchoring
+- **Prompt Engineering:** `src/services/aiService.js:38-97` - Strategy prompt template
+
+## API Integration
+
+The copilot uses Gemini 1.5 Flash:
+
+```javascript
+const response = await fetch(
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1500
+      }
+    })
+  }
+);
+```
+
+## Demo Mode
+
+Demo mode includes a pre-generated strategy showcasing:
+- Full strategy format
+- Bitcoin anchoring (simulated)
+- All UI interactions
+- No API key required
+
+## Advanced Features
+
+### Strategy Regeneration
+
+Click **Regenerate Strategy** to get a new recommendation:
+- Same portfolio data
+- Different protocol mix
+- Updated market conditions
+- New anchored transaction
+
+### Strategy Counter
+
+The badge shows total strategies anchored by your address:
+```
+⛓️ 3 anchored on Bitcoin
+```
+
+Fetched from Stacks smart contract:
+```javascript
+const count = await getStrategyCount(address);
+// Returns: BigInt representing total strategies
+```
+
+## Troubleshooting
+
+**"Failed to generate strategy" error:**
+- Check that `VITE_GEMINI_API_KEY` is set in `.env`
+- Verify API key has Gemini API access enabled
+- Check browser console for detailed error messages
+
+**Anchoring fails silently:**
+- Strategy will still display, anchoring is non-blocking
+- Ensure wallet has STX for transaction fees
+- Check Stacks network status
+
+**Strategy seems generic:**
+- Complete more transactions for better personalization
+- Generate multiple strategies to see variation
+- Try different risk profiles
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Conservative" icon="shield-check">
+    New to DeFi? Begin with HODLer profile to learn safely
+  </Card>
+  <Card title="Regular Reviews" icon="rotate">
+    Regenerate strategies monthly as your portfolio grows
+  </Card>
+  <Card title="Verify Anchoring" icon="check-double">
+    Click the transaction ID to verify on Stacks Explorer
+  </Card>
+  <Card title="Compare Protocols" icon="balance-scale">
+    Use Protocol Comparison tool to validate AI recommendations
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Yield Calculator" icon="calculator" href="/features/yield-calculator">
+    Simulate returns for recommended protocols
+  </Card>
+  <Card title="Health Score" icon="heart-pulse" href="/features/health-score">
+    Check portfolio diversification and risk
+  </Card>
+</CardGroup>

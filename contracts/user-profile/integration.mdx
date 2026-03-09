@@ -1,0 +1,620 @@
+---
+title: 'Contract Integration'
+description: 'Integrate Staxiq smart contracts into your frontend application'
+icon: 'code'
+---
+
+## Overview
+
+This guide shows you how to integrate the Staxiq User Profile contract into your web application using the Stacks JavaScript SDKs.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install Dependencies">
+    Install the required Stacks packages:
+    
+    ```bash
+    npm install @stacks/transactions @stacks/blockchain-api-client @stacks/network @stacks/connect
+    ```
+  </Step>
+  <Step title="Wallet Integration">
+    Users need a Stacks wallet (Hiro, Xverse, or Leather) to interact with smart contracts.
+  </Step>
+  <Step title="Network Configuration">
+    Decide whether to use testnet or mainnet.
+  </Step>
+</Steps>
+
+## Contract Service Implementation
+
+Staxiq provides a `contractService.js` module that wraps all contract interactions:
+
+```javascript src/services/contractService.js
+import {
+    makeContractCall,
+    stringAsciiCV,
+    uintCV,
+    AnchorMode,
+    PostConditionMode,
+    broadcastTransaction,
+} from '@stacks/transactions';
+
+import {
+    fetchCallReadOnlyFunction,
+    cvToJSON,
+} from '@stacks/blockchain-api-client';
+
+import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
+
+const CONTRACT_ADDRESS = 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ';
+const CONTRACT_NAME = 'staxiq-user-profile';
+
+function getNetwork() {
+    return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? STACKS_TESTNET
+        : STACKS_MAINNET;
+}
+```
+
+## Writing Data (Public Functions)
+
+Public functions modify blockchain state and require user wallet signatures.
+
+### Save Risk Profile
+
+Allow users to set their risk tolerance:
+
+```javascript src/services/contractService.js:28
+export async function saveRiskProfile(riskLevel) {
+    try {
+        const riskMap = { Conservative: 1, Balanced: 2, Aggressive: 3 };
+        const level = riskMap[riskLevel] || 2;
+        const network = getNetwork();
+
+        const txOptions = {
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'set-risk-profile',
+            functionArgs: [uintCV(level)],
+            network,
+            anchorMode: AnchorMode.Any,
+            postConditionMode: PostConditionMode.Allow,
+        };
+
+        const transaction = await makeContractCall(txOptions);
+        const result = await broadcastTransaction({ transaction, network });
+        console.log('✅ Risk profile saved:', result.txid);
+        return result.txid;
+    } catch (err) {
+        console.warn('Risk profile save failed:', err);
+        return null;
+    }
+}
+```
+
+<ParamField path="riskLevel" type="string" required>
+  One of: `"Conservative"`, `"Balanced"`, or `"Aggressive"`
+</ParamField>
+
+<ResponseField name="Returns" type="string | null">
+  Transaction ID on success, `null` on failure
+</ResponseField>
+
+#### Usage Example
+
+```javascript React Component
+import { saveRiskProfile } from './services/contractService';
+import { useState } from 'react';
+
+function RiskProfileForm() {
+  const [selectedRisk, setSelectedRisk] = useState('Balanced');
+  const [txId, setTxId] = useState(null);
+
+  const handleSubmit = async () => {
+    const result = await saveRiskProfile(selectedRisk);
+    if (result) {
+      setTxId(result);
+      alert(`Profile saved! TX: ${result}`);
+    } else {
+      alert('Failed to save profile');
+    }
+  };
+
+  return (
+    <div>
+      <select value={selectedRisk} onChange={(e) => setSelectedRisk(e.target.value)}>
+        <option value="Conservative">Conservative</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Aggressive">Aggressive</option>
+      </select>
+      <button onClick={handleSubmit}>Save Risk Profile</button>
+    </div>
+  );
+}
+```
+
+---
+
+### Anchor Strategy
+
+Save an AI-generated strategy hash on-chain:
+
+```javascript src/services/contractService.js:90
+export async function anchorStrategy(strategyHash, protocol) {
+    try {
+        const network = getNetwork();
+
+        const txOptions = {
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'save-strategy',
+            functionArgs: [
+                stringAsciiCV(strategyHash.slice(0, 64)),
+                stringAsciiCV(protocol.slice(0, 32)),
+            ],
+            network,
+            anchorMode: AnchorMode.Any,
+            postConditionMode: PostConditionMode.Allow,
+        };
+
+        const transaction = await makeContractCall(txOptions);
+        const result = await broadcastTransaction({ transaction, network });
+        console.log('✅ Strategy anchored:', result.txid);
+        return result.txid;
+    } catch (err) {
+        console.warn('Strategy anchoring failed:', err);
+        return null;
+    }
+}
+```
+
+<ParamField path="strategyHash" type="string" required>
+  64-character hex string (SHA-256 hash of strategy)
+</ParamField>
+
+<ParamField path="protocol" type="string" required>
+  Protocol name (max 32 characters), e.g., `"ALEX"`, `"Velar"`
+</ParamField>
+
+<ResponseField name="Returns" type="string | null">
+  Transaction ID on success, `null` on failure
+</ResponseField>
+
+#### Usage Example
+
+```javascript React Component
+import { anchorStrategy } from './services/contractService';
+import crypto from 'crypto';
+
+function StrategyAnchor({ strategy }) {
+  const handleAnchor = async () => {
+    // Hash the strategy
+    const hash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(strategy))
+      .digest('hex');
+
+    // Anchor to blockchain
+    const txId = await anchorStrategy(hash, strategy.protocol);
+    
+    if (txId) {
+      console.log('Strategy anchored with TX:', txId);
+      // Store txId in your database alongside the strategy
+    }
+  };
+
+  return (
+    <button onClick={handleAnchor}>
+      Anchor Strategy to Blockchain
+    </button>
+  );
+}
+```
+
+---
+
+## Reading Data (Read-Only Functions)
+
+Read-only functions are free to call and don't require wallet signatures.
+
+### Get User Profile
+
+Retrieve a user's complete profile:
+
+```javascript src/services/contractService.js:55
+export async function getUserProfile(address) {
+    try {
+        const result = await fetchCallReadOnlyFunction({
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'get-user-profile',
+            functionArgs: [],
+            senderAddress: address,
+            network: getNetwork(),
+        });
+        return cvToJSON(result);
+    } catch (err) {
+        console.warn('Get profile failed:', err);
+        return null;
+    }
+}
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address (principal)
+</ParamField>
+
+<ResponseField name="Returns" type="object | null">
+  Profile object or `null` if not found
+  <Expandable title="Profile Object">
+    <ResponseField name="risk_level" type="number">
+      1 = Conservative, 2 = Balanced, 3 = Aggressive
+    </ResponseField>
+    <ResponseField name="created_at" type="number">
+      Block height when created
+    </ResponseField>
+    <ResponseField name="updated_at" type="number">
+      Block height of last update
+    </ResponseField>
+    <ResponseField name="strategy_count" type="number">
+      Total strategies saved
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Usage Example
+
+```javascript React Component
+import { getUserProfile } from './services/contractService';
+import { useEffect, useState } from 'react';
+
+function ProfileDisplay({ userAddress }) {
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const data = await getUserProfile(userAddress);
+      setProfile(data);
+    }
+    loadProfile();
+  }, [userAddress]);
+
+  if (!profile) return <p>No profile found</p>;
+
+  const riskLabels = { 1: 'Conservative', 2: 'Balanced', 3: 'Aggressive' };
+
+  return (
+    <div>
+      <h3>User Profile</h3>
+      <p>Risk Level: {riskLabels[profile.risk_level]}</p>
+      <p>Strategies Saved: {profile.strategy_count}</p>
+      <p>Member Since Block: {profile.created_at}</p>
+    </div>
+  );
+}
+```
+
+---
+
+### Check if User Has Profile
+
+```javascript src/services/contractService.js:73
+export async function checkHasProfile(address) {
+    try {
+        const result = await fetchCallReadOnlyFunction({
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'has-profile',
+            functionArgs: [],
+            senderAddress: address,
+            network: getNetwork(),
+        });
+        return cvToJSON(result).value;
+    } catch (err) {
+        return false;
+    }
+}
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="Returns" type="boolean">
+  `true` if user has a profile, `false` otherwise
+</ResponseField>
+
+#### Usage Example
+
+```javascript React Component
+import { checkHasProfile } from './services/contractService';
+import { useEffect, useState } from 'react';
+
+function OnboardingCheck({ userAddress, children }) {
+  const [hasProfile, setHasProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function check() {
+      const result = await checkHasProfile(userAddress);
+      setHasProfile(result);
+      setLoading(false);
+    }
+    check();
+  }, [userAddress]);
+
+  if (loading) return <p>Checking profile...</p>;
+  if (!hasProfile) return <RiskProfileSetup />;
+  
+  return children; // User has profile, show main app
+}
+```
+
+---
+
+### Get Strategy Count
+
+```javascript src/services/contractService.js:118
+export async function getStrategyCount(address) {
+    try {
+        const result = await fetchCallReadOnlyFunction({
+            contractAddress: CONTRACT_ADDRESS,
+            contractName: CONTRACT_NAME,
+            functionName: 'get-strategy-count',
+            functionArgs: [],
+            senderAddress: address,
+            network: getNetwork(),
+        });
+        return cvToJSON(result).value || 0;
+    } catch (err) {
+        return 0;
+    }
+}
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Total number of strategies (0 if none)
+</ResponseField>
+
+---
+
+## Wallet Connection
+
+Before users can interact with contracts, they need to connect their wallet using Stacks Connect:
+
+```javascript Wallet Connection
+import { showConnect, AppConfig, UserSession } from '@stacks/connect';
+
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+const userSession = new UserSession({ appConfig });
+
+export function connectWallet() {
+  showConnect({
+    appDetails: {
+      name: 'Staxiq',
+      icon: window.location.origin + '/logo.png',
+    },
+    redirectTo: '/',
+    onFinish: () => {
+      window.location.reload();
+    },
+    userSession,
+  });
+}
+
+export function getUserAddress() {
+  if (userSession.isUserSignedIn()) {
+    const userData = userSession.loadUserData();
+    return userData.profile.stxAddress.testnet; // or .mainnet
+  }
+  return null;
+}
+
+export function disconnectWallet() {
+  userSession.signUserOut();
+  window.location.reload();
+}
+```
+
+### Usage in React
+
+```javascript Wallet Provider
+import { connectWallet, getUserAddress, disconnectWallet } from './services/walletService';
+import { useEffect, useState } from 'react';
+
+function WalletButton() {
+  const [address, setAddress] = useState(null);
+
+  useEffect(() => {
+    const addr = getUserAddress();
+    setAddress(addr);
+  }, []);
+
+  if (address) {
+    return (
+      <div>
+        <p>{address.slice(0, 8)}...{address.slice(-4)}</p>
+        <button onClick={disconnectWallet}>Disconnect</button>
+      </div>
+    );
+  }
+
+  return <button onClick={connectWallet}>Connect Wallet</button>;
+}
+```
+
+---
+
+## Complete Integration Example
+
+Here's a complete example showing the full user flow:
+
+<CodeGroup>
+```javascript Complete Flow
+import {
+  saveRiskProfile,
+  getUserProfile,
+  checkHasProfile,
+  anchorStrategy,
+  getStrategyCount
+} from './services/contractService';
+import { getUserAddress } from './services/walletService';
+import crypto from 'crypto';
+
+async function completeUserFlow() {
+  // 1. Get user's wallet address
+  const userAddress = getUserAddress();
+  if (!userAddress) {
+    console.log('Please connect wallet first');
+    return;
+  }
+
+  // 2. Check if user has a profile
+  const hasProfile = await checkHasProfile(userAddress);
+  
+  if (!hasProfile) {
+    // 3. Create profile if needed
+    console.log('Creating risk profile...');
+    const txId = await saveRiskProfile('Balanced');
+    console.log('Profile created:', txId);
+    
+    // Wait for transaction to confirm (~10 minutes)
+    await waitForConfirmation(txId);
+  }
+
+  // 4. Get user profile
+  const profile = await getUserProfile(userAddress);
+  console.log('Profile:', profile);
+
+  // 5. Generate and anchor strategy
+  const strategy = {
+    protocol: 'ALEX',
+    actions: ['stake', 'farm'],
+    expectedAPY: 12.5,
+    riskLevel: profile.risk_level
+  };
+
+  const hash = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(strategy))
+    .digest('hex');
+
+  const strategyTxId = await anchorStrategy(hash, 'ALEX');
+  console.log('Strategy anchored:', strategyTxId);
+
+  // 6. Get total strategy count
+  const count = await getStrategyCount(userAddress);
+  console.log(`User has ${count} strategies`);
+}
+
+function waitForConfirmation(txId) {
+  return new Promise((resolve) => {
+    // Poll for transaction confirmation
+    const interval = setInterval(async () => {
+      const tx = await fetch(`https://api.testnet.hiro.so/extended/v1/tx/${txId}`);
+      const data = await tx.json();
+      if (data.tx_status === 'success') {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 10000); // Check every 10 seconds
+  });
+}
+```
+
+```javascript React Hook
+import { useState, useEffect } from 'react';
+import { getUserProfile, checkHasProfile } from './services/contractService';
+
+export function useUserProfile(address) {
+  const [profile, setProfile] = useState(null);
+  const [hasProfile, setHasProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!address) return;
+      
+      setLoading(true);
+      const exists = await checkHasProfile(address);
+      setHasProfile(exists);
+      
+      if (exists) {
+        const data = await getUserProfile(address);
+        setProfile(data);
+      }
+      
+      setLoading(false);
+    }
+    
+    loadProfile();
+  }, [address]);
+
+  return { profile, hasProfile, loading };
+}
+```
+</CodeGroup>
+
+---
+
+## Error Handling
+
+Handle common errors gracefully:
+
+```javascript Error Handling
+import { saveRiskProfile } from './services/contractService';
+
+async function saveProfileWithErrorHandling(riskLevel) {
+  try {
+    const txId = await saveRiskProfile(riskLevel);
+    
+    if (!txId) {
+      throw new Error('Transaction failed to broadcast');
+    }
+    
+    return { success: true, txId };
+  } catch (error) {
+    if (error.message.includes('user canceled')) {
+      return { success: false, error: 'User canceled transaction' };
+    }
+    
+    if (error.message.includes('insufficient funds')) {
+      return { success: false, error: 'Insufficient STX for gas fees' };
+    }
+    
+    return { success: false, error: 'Unknown error occurred' };
+  }
+}
+```
+
+## Testing Integration
+
+<Tip>
+  Always test on testnet before deploying to mainnet:
+  
+  1. Use testnet STX from the [Stacks Faucet](https://explorer.hiro.so/sandbox/faucet?chain=testnet)
+  2. Connect with a testnet wallet
+  3. Verify transactions on [Testnet Explorer](https://explorer.hiro.so/?chain=testnet)
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Function Reference" icon="book" href="/contracts/user-profile/functions">
+    See detailed function documentation
+  </Card>
+  <Card title="Testing" icon="flask" href="/contracts/testing">
+    Learn how to test contracts locally
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/contracts/deployment">
+    Deploy contracts to testnet or mainnet
+  </Card>
+  <Card title="Stacks.js Docs" icon="external-link" href="https://docs.stacks.co/stacks.js/overview">
+    Official Stacks JavaScript documentation
+  </Card>
+</CardGroup>

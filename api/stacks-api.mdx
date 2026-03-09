@@ -1,0 +1,482 @@
+---
+title: 'Stacks API'
+description: 'Fetch blockchain data from Hiro API including balances, transactions, and prices'
+icon: 'layer-group'
+---
+
+## Overview
+
+The Stacks API service provides functions to interact with the Hiro Stacks API for fetching real-time blockchain data. All functions automatically detect network (testnet/mainnet) based on address prefix.
+
+**Source:** `src/services/stacksApi.js`
+
+## Functions
+
+### getSTXBalance
+
+Fetch a user's STX token balance.
+
+```javascript
+async function getSTXBalance(address: string): Promise<string>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address (mainnet starts with `SP`, testnet starts with `ST`)
+</ParamField>
+
+<ResponseField name="balance" type="string">
+  STX balance formatted to 4 decimal places (e.g., "100.0000")
+  Returns `"0.0000"` on error
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getSTXBalance } from './services/stacksApi';
+
+const balance = await getSTXBalance('SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5');
+console.log('STX Balance:', balance); // "100.0000"
+```
+
+<Note>
+  Balance is returned in STX units (converted from microstacks). 1 STX = 1,000,000 microstacks.
+</Note>
+
+---
+
+### getSBTCBalance
+
+Fetch a user's sBTC (synthetic Bitcoin) balance.
+
+```javascript
+async function getSBTCBalance(address: string): Promise<string>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="balance" type="string">
+  sBTC balance formatted to 8 decimal places (e.g., "0.00500000")
+  Returns `"0.00000000"` on error
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getSBTCBalance } from './services/stacksApi';
+
+const sbtcBalance = await getSBTCBalance(address);
+console.log('sBTC Balance:', sbtcBalance); // "0.00500000"
+```
+
+#### Supported Contracts
+
+The function checks multiple sBTC contract addresses:
+
+```javascript
+const sBTCContracts = [
+  'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token', // Mainnet
+  'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token', // Testnet
+];
+```
+
+---
+
+### getTokenBalances
+
+Fetch all fungible token balances for an address.
+
+```javascript
+async function getTokenBalances(address: string): Promise<object>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="tokens" type="object">
+  Object mapping token contract IDs to balance info
+  Returns `{}` (empty object) on error
+  
+  ```javascript
+  {
+    "SP000...token-contract": {
+      balance: "1000000",
+      total_sent: "0",
+      total_received: "1000000"
+    }
+  }
+  ```
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getTokenBalances } from './services/stacksApi';
+
+const tokens = await getTokenBalances(address);
+
+for (const [contractId, info] of Object.entries(tokens)) {
+  console.log(`${contractId}: ${info.balance}`);
+}
+```
+
+---
+
+### getTransactionHistory
+
+Fetch recent transaction history for an address.
+
+```javascript
+async function getTransactionHistory(address: string): Promise<array>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="transactions" type="array">
+  Array of transaction objects (max 10, most recent first)
+  Returns `[]` on error
+  
+  <ResponseField name="txId" type="string">
+    Full transaction ID
+  </ResponseField>
+  
+  <ResponseField name="shortTxId" type="string">
+    Shortened ID for display (e.g., "0x1234ab...89ef")
+  </ResponseField>
+  
+  <ResponseField name="explorerUrl" type="string">
+    Direct link to Hiro Explorer for this transaction
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Transaction type (e.g., "token_transfer", "contract_call")
+  </ResponseField>
+  
+  <ResponseField name="status" type="string">
+    Transaction status ("success", "pending", "failed")
+  </ResponseField>
+  
+  <ResponseField name="amount" type="string">
+    Amount transferred (e.g., "10.0000 STX") or "--" if not applicable
+  </ResponseField>
+  
+  <ResponseField name="date" type="string">
+    Formatted date string (e.g., "1/15/2024")
+  </ResponseField>
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getTransactionHistory } from './services/stacksApi';
+
+const txHistory = await getTransactionHistory(address);
+
+txHistory.forEach(tx => {
+  console.log(`${tx.date}: ${tx.amount} - ${tx.status}`);
+  console.log(`View: ${tx.explorerUrl}`);
+});
+```
+
+---
+
+### getSTXPrice
+
+Fetch current STX price in USD with multiple fallback sources.
+
+```javascript
+async function getSTXPrice(): Promise<number>
+```
+
+<ResponseField name="price" type="number">
+  Current STX price in USD (e.g., `2.85`)
+  Returns cached value or fallback (`2.85`) on error
+</ResponseField>
+
+#### Price Fetching Strategy
+
+<Steps>
+  <Step title="Check Cache">
+    First checks `localStorage` for recently cached price (shared with PriceTicker component)
+    
+    **Valid for:** 1 hour
+  </Step>
+  
+  <Step title="CryptoCompare API">
+    If cache miss, tries CryptoCompare API (better CORS support)
+    
+    ```
+    https://min-api.cryptocompare.com/data/price?fsym=STX&tsyms=USD
+    ```
+  </Step>
+  
+  <Step title="CoinGecko API">
+    Falls back to CoinGecko if CryptoCompare fails
+    
+    ```
+    https://api.coingecko.com/api/v3/simple/price?ids=blockstack&vs_currencies=usd
+    ```
+  </Step>
+  
+  <Step title="Hard Default">
+    Returns `2.85` if all APIs fail (reasonable fallback)
+  </Step>
+</Steps>
+
+#### Example
+
+```javascript
+import { getSTXPrice } from './services/stacksApi';
+
+const price = await getSTXPrice();
+console.log('STX Price:', price); // 2.85
+
+// Calculate portfolio value
+const stxBalance = await getSTXBalance(address);
+const usdValue = (parseFloat(stxBalance) * price).toFixed(2);
+console.log('Portfolio:', usdValue, 'USD');
+```
+
+---
+
+### getFullPortfolio
+
+Fetch complete portfolio data in a single call (parallelized).
+
+```javascript
+async function getFullPortfolio(address: string): Promise<object>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="portfolio" type="object">
+  Complete portfolio data object
+  
+  <ResponseField name="stxBalance" type="string">
+    STX balance (4 decimals)
+  </ResponseField>
+  
+  <ResponseField name="sbtcBalance" type="string">
+    sBTC balance (8 decimals)
+  </ResponseField>
+  
+  <ResponseField name="txHistory" type="array">
+    Recent transaction history (max 10)
+  </ResponseField>
+  
+  <ResponseField name="stxPrice" type="number">
+    Current STX price in USD
+  </ResponseField>
+  
+  <ResponseField name="totalUSD" type="string">
+    Total portfolio value in USD (2 decimals)
+  </ResponseField>
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+```javascript Basic Usage
+import { getFullPortfolio } from './services/stacksApi';
+
+const portfolio = await getFullPortfolio(address);
+
+console.log('STX:', portfolio.stxBalance);
+console.log('sBTC:', portfolio.sbtcBalance);
+console.log('Total USD:', portfolio.totalUSD);
+console.log('Recent TXs:', portfolio.txHistory.length);
+```
+
+```jsx React Component
+import { useState, useEffect } from 'react';
+import { getFullPortfolio } from './services/stacksApi';
+
+function Portfolio({ address }) {
+  const [portfolio, setPortfolio] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetch() {
+      const data = await getFullPortfolio(address);
+      setPortfolio(data);
+      setLoading(false);
+    }
+    fetch();
+  }, [address]);
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>Portfolio</h2>
+      <p>STX: {portfolio.stxBalance}</p>
+      <p>sBTC: {portfolio.sbtcBalance}</p>
+      <p>Value: ${portfolio.totalUSD} USD</p>
+      <h3>Recent Transactions</h3>
+      <ul>
+        {portfolio.txHistory.map(tx => (
+          <li key={tx.txId}>{tx.shortTxId} - {tx.amount}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+<Note>
+  This function parallelizes all API calls using `Promise.all` for optimal performance.
+</Note>
+
+---
+
+## Network Detection
+
+All functions automatically detect the correct API endpoint:
+
+```javascript
+function getApiBase(address) {
+  return address?.startsWith('ST')
+    ? 'https://api.testnet.hiro.so'
+    : 'https://api.hiro.so';
+}
+```
+
+<Tabs>
+  <Tab title="Mainnet">
+    **Address prefix:** `SP`  
+    **API base:** `https://api.hiro.so`  
+    **Explorer:** `https://explorer.hiro.so`
+  </Tab>
+  
+  <Tab title="Testnet">
+    **Address prefix:** `ST`  
+    **API base:** `https://api.testnet.hiro.so`  
+    **Explorer:** `https://explorer.hiro.so?chain=testnet`
+  </Tab>
+</Tabs>
+
+## Error Handling
+
+All functions gracefully handle errors:
+
+- **Balance functions** return `"0"` with appropriate decimal places
+- **Transaction history** returns empty array `[]`
+- **Price function** returns cached value or `2.85` fallback
+- **Token balances** returns empty object `{}`
+- Errors are logged to console for debugging
+
+```javascript
+try {
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return processData(await res.json());
+} catch (err) {
+  console.error('API error:', err);
+  return fallbackValue;
+}
+```
+
+<Warning>
+  No exceptions are thrown - all functions return safe defaults on error.
+</Warning>
+
+## Performance Optimization
+
+### Parallel Requests
+
+`getFullPortfolio` uses `Promise.all` to fetch data in parallel:
+
+```javascript
+const [stxBalance, sbtcBalance, txHistory, stxPrice] = await Promise.all([
+  getSTXBalance(address),
+  getSBTCBalance(address),
+  getTransactionHistory(address),
+  getSTXPrice(),
+]);
+```
+
+### Price Caching
+
+STX price is cached in `localStorage` for 1 hour:
+
+```javascript
+const cached = localStorage.getItem('staxiq_prices');
+if (cached) {
+  const { data, timestamp } = JSON.parse(cached);
+  if (Date.now() - timestamp < 3600000) { // 1 hour
+    return parseFloat(data.stx.usd);
+  }
+}
+```
+
+## Complete Example
+
+```javascript
+import {
+  getSTXBalance,
+  getSBTCBalance,
+  getTransactionHistory,
+  getSTXPrice,
+  getFullPortfolio,
+} from './services/stacksApi';
+
+async function displayPortfolio(address) {
+  console.log('Fetching portfolio for:', address);
+  
+  // Option 1: Individual calls
+  const stx = await getSTXBalance(address);
+  const sbtc = await getSBTCBalance(address);
+  const price = await getSTXPrice();
+  const txs = await getTransactionHistory(address);
+  
+  console.log(`STX: ${stx}`);
+  console.log(`sBTC: ${sbtc}`);
+  console.log(`STX Price: $${price}`);
+  console.log(`Recent Transactions: ${txs.length}`);
+  
+  // Option 2: All-in-one (faster)
+  const portfolio = await getFullPortfolio(address);
+  
+  console.log('Portfolio:', portfolio);
+  console.log(`Total Value: $${portfolio.totalUSD}`);
+}
+```
+
+## API Rate Limits
+
+Hiro API has rate limits:
+- **Free tier:** 50 requests/minute
+- **Authenticated:** Higher limits with API key
+
+Implement caching and debouncing for production apps:
+
+```javascript
+// Cache results for 30 seconds
+let cache = {};
+let lastFetch = 0;
+
+async function getCachedPortfolio(address) {
+  const now = Date.now();
+  if (cache[address] && now - lastFetch < 30000) {
+    return cache[address];
+  }
+  
+  const data = await getFullPortfolio(address);
+  cache[address] = data;
+  lastFetch = now;
+  return data;
+}
+```
+
+## Related Resources
+
+- [usePortfolio Hook](/api/hooks/use-portfolio) - React hook wrapper with auto-refresh
+- [Contract Service](/api/contract-service) - Write data to blockchain
+- [Hiro API Docs](https://docs.hiro.so/stacks-blockchain-api)

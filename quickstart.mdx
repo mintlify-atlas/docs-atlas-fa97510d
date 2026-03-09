@@ -1,80 +1,326 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Get started with Staxiq in 5 minutes - view your portfolio and get AI-powered DeFi strategies'
+icon: 'rocket'
 ---
 
-## Get started in three steps
+## Welcome to Staxiq
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+Staxiq is your intelligent Bitcoin DeFi copilot built on Stacks. Get personalized DeFi strategies, track your portfolio, and explore top protocols - all powered by AI and anchored on Bitcoin.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **New to Bitcoin DeFi?** No problem! You can explore Staxiq in demo mode without connecting a wallet.
 </Note>
+
+## Getting Started
+
+Choose your path:
+
+<CardGroup cols={2}>
+  <Card title="Demo Mode" icon="play" href="#demo-mode">
+    Explore Staxiq with a sample portfolio - no wallet needed
+  </Card>
+  <Card title="Connect Wallet" icon="wallet" href="#connect-your-wallet">
+    Connect your Stacks wallet to see your real portfolio
+  </Card>
+</CardGroup>
+
+---
+
+## Demo Mode
+
+The fastest way to experience Staxiq is through demo mode:
+
+<Steps>
+  <Step title="Visit Staxiq">
+    Navigate to [app.staxiq.com](https://app.staxiq.com) (or your local development URL)
+  </Step>
+  
+  <Step title="Try Demo Mode">
+    Click **"Try Demo Mode"** on the landing page to instantly view a sample portfolio
+  </Step>
+  
+  <Step title="Explore Features">
+    Demo mode gives you access to:
+    - Sample portfolio with STX and sBTC balances
+    - Portfolio value chart
+    - Active protocol positions
+    - AI strategy generation
+    - Transaction history
+    - Full protocol explorer
+  </Step>
+  
+  <Step title="Generate AI Strategy">
+    Scroll to the **"AI DeFi Copilot"** section and click **"Get My Personalized Strategy"** to see AI recommendations
+  </Step>
+</Steps>
+
+<Info>
+  Demo mode uses realistic sample data to showcase Staxiq's capabilities. When you're ready, connect your real wallet to see your actual portfolio.
+</Info>
+
+---
+
+## Connect Your Wallet
+
+To access your real portfolio and interact with DeFi protocols:
+
+<Steps>
+  <Step title="Install a Stacks Wallet">
+    You'll need a Stacks-compatible wallet. We recommend:
+    
+    <CardGroup cols={2}>
+      <Card title="Leather Wallet" icon="chrome" href="https://leather.io">
+        Browser extension wallet with clean UI
+      </Card>
+      <Card title="Xverse" icon="mobile" href="https://xverse.app">
+        Mobile and browser wallet with Bitcoin support
+      </Card>
+    </CardGroup>
+    
+    <Accordion title="Need help setting up a wallet?">
+      Visit our [Wallet Setup Guide](/wallet-setup) for detailed instructions on installing and configuring your Stacks wallet.
+    </Accordion>
+  </Step>
+  
+  <Step title="Click Connect Wallet">
+    On the Staxiq homepage or dashboard, click the **"Connect Wallet"** button in the top navigation
+  </Step>
+  
+  <Step title="Select Your Wallet">
+    Choose your installed wallet from the popup menu:
+    - Leather
+    - Xverse
+    - Hiro Wallet
+    - Or other Stacks-compatible wallets
+  </Step>
+  
+  <Step title="Approve Connection">
+    Your wallet will open asking you to approve the connection. Click **"Connect"** to authorize Staxiq to:
+    - View your wallet address
+    - View your STX and token balances
+    - View your transaction history
+    
+    <Warning>
+      Staxiq cannot move funds or sign transactions without your explicit approval each time.
+    </Warning>
+  </Step>
+  
+  <Step title="View Your Dashboard">
+    Once connected, you'll see your real portfolio data:
+    - Live STX and sBTC balances
+    - Total portfolio value in USD
+    - Recent transaction history
+    - Detected protocol positions
+  </Step>
+</Steps>
+
+---
+
+## Access Your Dashboard
+
+After connecting (or in demo mode), your dashboard provides a complete overview:
+
+### Portfolio Metrics
+
+<CardGroup cols={4}>
+  <Card title="STX Balance" icon="coins">
+    Your total STX holdings
+  </Card>
+  <Card title="sBTC Balance" icon="bitcoin">
+    Your sBTC (Bitcoin on Stacks)
+  </Card>
+  <Card title="Total Value" icon="dollar-sign">
+    Portfolio value in USD
+  </Card>
+  <Card title="Transactions" icon="receipt">
+    Total transaction count
+  </Card>
+</CardGroup>
+
+### Portfolio Chart
+
+Visualize your portfolio allocation between STX and sBTC with an interactive chart.
+
+### Active Protocols
+
+See which DeFi protocols you're currently using based on your transaction history.
+
+### AI DeFi Copilot
+
+Generate personalized DeFi strategies:
+
+<Steps>
+  <Step title="Select Risk Profile">
+    Choose from:
+    - **HODLer** (Conservative): Capital preservation focus
+    - **Builder** (Balanced): Risk-adjusted returns
+    - **Degen** (Aggressive): Maximum yield seeking
+  </Step>
+  
+  <Step title="Generate Strategy">
+    Click **"Get My Personalized Strategy"** to receive AI-powered recommendations
+  </Step>
+  
+  <Step title="Review Recommendations">
+    The AI analyzes your portfolio and suggests:
+    - Specific protocols to use
+    - Allocation percentages
+    - Projected returns
+    - Risk assessment
+    - Step-by-step execution plan
+  </Step>
+  
+  <Step title="Strategy Anchored on Bitcoin">
+    Your strategy is automatically hashed and anchored on Bitcoin via Stacks for verifiable authenticity
+  </Step>
+</Steps>
+
+### Recent Transactions
+
+View your latest Stacks transactions with status, type, and timestamp.
+
+---
+
+## Explore Protocols
+
+Discover DeFi protocols available on Stacks:
+
+<Steps>
+  <Step title="Visit Protocol Explorer">
+    Navigate to the **"Protocols"** page from the main navigation
+  </Step>
+  
+  <Step title="Filter by Type">
+    Use filter tabs to browse:
+    - **All** - View all protocols
+    - **Lending** - Lend and borrow assets
+    - **DEX** - Swap tokens
+    - **Yield** - Liquidity mining
+    - **Stacking** - Stack STX to earn BTC
+  </Step>
+  
+  <Step title="Sort by APY">
+    Protocols are automatically sorted by APY (Annual Percentage Yield) from highest to lowest
+  </Step>
+  
+  <Step title="View Protocol Details">
+    Each protocol card shows:
+    - Current APY
+    - Total Value Locked (TVL)
+    - Supported assets (STX, sBTC, etc.)
+    - Risk level
+    - Brief description
+    - Direct link to protocol website
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+Now that you're set up, explore Staxiq's features:
+
+<CardGroup cols={2}>
+  <Card title="Understanding Your Portfolio" icon="chart-pie" href="/guides/analyzing-portfolio">
+    Learn how portfolio data is calculated and updated
+  </Card>
+  
+  <Card title="Using the AI Advisor" icon="brain" href="/guides/using-ai-copilot">
+    Deep dive into AI strategy generation and personalization
+  </Card>
+  
+  <Card title="Exploring Protocols" icon="layer-group" href="/protocols/overview">
+    Browse detailed protocol guides and integration docs
+  </Card>
+  
+  <Card title="Wallet Setup" icon="wallet" href="/wallet-setup">
+    Advanced wallet configuration and troubleshooting
+  </Card>
+</CardGroup>
+
+---
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Is my wallet safe when I connect?">
+    Yes! Staxiq uses standard Stacks Connect authentication. We can only:
+    - **Read** your public wallet address
+    - **Read** your balances and transaction history
+    
+    We **cannot**:
+    - Move your funds
+    - Sign transactions without your approval
+    - Access your private keys
+    
+    Every transaction requires explicit approval in your wallet.
+  </Accordion>
+  
+  <Accordion title="Do I need STX or sBTC to use Staxiq?">
+    No! You can explore Staxiq with demo mode or connect an empty wallet. However, to:
+    - Interact with DeFi protocols
+    - Execute AI strategy recommendations
+    - Earn yield
+    
+    You'll need to hold STX, sBTC, or other Stacks tokens.
+  </Accordion>
+  
+  <Accordion title="How does the AI generate strategies?">
+    Staxiq uses Google's Gemini 1.5 Flash to analyze:
+    - Your current portfolio (STX, sBTC balances)
+    - Your selected risk profile
+    - Available DeFi protocols with APY and TVL data
+    - Your transaction history (to personalize advice)
+    
+    The AI generates personalized recommendations in 2-5 seconds, tailored to your experience level.
+  </Accordion>
+  
+  <Accordion title="What does 'anchored on Bitcoin' mean?">
+    Every AI strategy you generate is:
+    1. Hashed using SHA-256
+    2. Recorded on the Stacks blockchain
+    3. Automatically anchored to Bitcoin
+    
+    This creates a verifiable, tamper-proof record of your strategy that's secured by Bitcoin's proof-of-work.
+  </Accordion>
+  
+  <Accordion title="Which networks does Staxiq support?">
+    Staxiq supports:
+    - **Stacks Mainnet** (production, real funds)
+    - **Stacks Testnet** (testing, no real value)
+    
+    Your connected wallet determines which network you're using. We automatically detect and display the appropriate address.
+  </Accordion>
+  
+  <Accordion title="Can I use Staxiq on mobile?">
+    Yes! Staxiq is fully responsive and works on:
+    - Desktop browsers
+    - Mobile browsers
+    - Tablet browsers
+    
+    For the best mobile experience, use a wallet with mobile support like Xverse.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Need Help?
+
+If you encounter issues or have questions:
+
+<CardGroup cols={2}>
+  <Card title="Documentation" icon="book" href="/introduction">
+    Browse comprehensive guides and API docs
+  </Card>
+  
+  <Card title="GitHub" icon="github" href="https://github.com/natureloved/Staxiq">
+    Report bugs or contribute to development
+  </Card>
+</CardGroup>
+
+---
+
+<Check>
+  **You're all set!** Start exploring Bitcoin DeFi with Staxiq's AI-powered guidance.
+</Check>

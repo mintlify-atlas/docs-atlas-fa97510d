@@ -1,0 +1,553 @@
+---
+title: 'useProtocols'
+description: 'Browse and filter DeFi protocols with sorting and type filtering'
+icon: 'layer-group'
+---
+
+## Overview
+
+The `useProtocols` hook provides access to the complete list of Stacks DeFi protocols with built-in filtering and sorting capabilities. It enables users to browse protocols by type (Lending, DEX, Yield, Stacking) and automatically sorts by APY.
+
+**Source:** `src/hooks/useProtocols.js`
+
+## Import
+
+```javascript
+import { useProtocols } from './hooks/useProtocols';
+```
+
+## Hook Signature
+
+```javascript
+function useProtocols(): {
+  protocols: Array<Protocol>,
+  filter: string,
+  setFilter: (filter: string) => void,
+  loading: boolean,
+}
+```
+
+## Parameters
+
+This hook takes no parameters.
+
+## Return Values
+
+<ResponseField name="protocols" type="Array<Protocol>">
+  Array of protocol objects, filtered by current `filter` and sorted by APY (highest first).
+  
+  Each protocol object contains:
+  - `name` (string): Protocol name (e.g., "Zest Protocol")
+  - `type` (string): Protocol type - `"Lending"`, `"DEX"`, `"Yield"`, or `"Stacking"`
+  - `apy` (string): Annual percentage yield (e.g., `"8.2"`)
+  - `tvl` (string): Total value locked (e.g., `"$48.2M"`)
+  - `asset` (string): Supported assets (e.g., `"sBTC"`, `"STX"`, `"sBTC, STX"`)
+  - `risk` (string): Risk level - `"Low"`, `"Medium"`, or `"High"`
+  - `description` (string): Brief protocol description
+  - `url` (string): Protocol website URL
+  - `logo` (string, optional): Logo image URL or path
+</ResponseField>
+
+<ResponseField name="filter" type="string">
+  Current filter selection. One of: `"All"`, `"Lending"`, `"DEX"`, `"Yield"`, or `"Stacking"`.
+  
+  Defaults to `"All"` which shows all protocols.
+</ResponseField>
+
+<ResponseField name="setFilter" type="function">
+  Update the protocol filter. Triggers a loading animation (800ms) when changed.
+  
+  **Signature:** `(filter: string) => void`
+  
+  **Valid values:** `"All"`, `"Lending"`, `"DEX"`, `"Yield"`, `"Stacking"`
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` during filter transition animation (800ms), `false` otherwise. Use this to show loading states when filter changes.
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```jsx Basic Protocol List
+import { useProtocols } from './hooks/useProtocols';
+
+function ProtocolList() {
+  const { protocols, filter, setFilter, loading } = useProtocols();
+
+  return (
+    <div>
+      <h2>DeFi Protocols</h2>
+      
+      {/* Filter Buttons */}
+      <div className="filters">
+        {['All', 'Lending', 'DEX', 'Yield', 'Stacking'].map(type => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={filter === type ? 'active' : ''}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+      
+      {/* Protocol Cards */}
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div className="protocol-grid">
+          {protocols.map(protocol => (
+            <div key={protocol.name} className="protocol-card">
+              <h3>{protocol.name}</h3>
+              <p>{protocol.description}</p>
+              <div className="protocol-stats">
+                <span>APY: {protocol.apy}%</span>
+                <span>TVL: {protocol.tvl}</span>
+                <span>Risk: {protocol.risk}</span>
+              </div>
+              <a href={protocol.url} target="_blank">Visit Protocol →</a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx With Loading Skeleton
+import { useProtocols } from './hooks/useProtocols';
+
+function ProtocolExplorer() {
+  const { protocols, filter, setFilter, loading } = useProtocols();
+
+  const filterOptions = ['All', 'Lending', 'DEX', 'Yield', 'Stacking'];
+
+  return (
+    <div className="protocol-explorer">
+      <header>
+        <h1>Explore DeFi Protocols</h1>
+        <p>{protocols.length} protocols available</p>
+      </header>
+      
+      {/* Filter Tabs */}
+      <nav className="filter-tabs">
+        {filterOptions.map(option => (
+          <button
+            key={option}
+            onClick={() => setFilter(option)}
+            className={`filter-tab ${filter === option ? 'active' : ''}`}
+            disabled={loading}
+          >
+            {option}
+          </button>
+        ))}
+      </nav>
+      
+      {/* Protocol Grid */}
+      <div className="protocol-grid">
+        {loading ? (
+          // Show skeleton loaders during filter transition
+          Array(6).fill(0).map((_, i) => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton-header" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-footer" />
+            </div>
+          ))
+        ) : (
+          protocols.map(protocol => (
+            <div key={protocol.name} className="protocol-card">
+              {protocol.logo && (
+                <img src={protocol.logo} alt={protocol.name} className="protocol-logo" />
+              )}
+              <div className="protocol-header">
+                <h3>{protocol.name}</h3>
+                <span className={`badge badge-${protocol.type.toLowerCase()}`}>
+                  {protocol.type}
+                </span>
+              </div>
+              <p className="protocol-description">{protocol.description}</p>
+              <div className="protocol-metrics">
+                <div className="metric">
+                  <label>APY</label>
+                  <strong>{protocol.apy}%</strong>
+                </div>
+                <div className="metric">
+                  <label>TVL</label>
+                  <strong>{protocol.tvl}</strong>
+                </div>
+                <div className="metric">
+                  <label>Asset</label>
+                  <strong>{protocol.asset}</strong>
+                </div>
+                <div className="metric">
+                  <label>Risk</label>
+                  <span className={`risk risk-${protocol.risk.toLowerCase()}`}>
+                    {protocol.risk}
+                  </span>
+                </div>
+              </div>
+              <a 
+                href={protocol.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="protocol-link"
+              >
+                Visit Protocol →
+              </a>
+            </div>
+          ))
+        )}
+      </div>
+      
+      {!loading && protocols.length === 0 && (
+        <div className="empty-state">
+          <p>No protocols found for {filter}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx With Search and Filter
+import { useState } from 'react';
+import { useProtocols } from './hooks/useProtocols';
+
+function ProtocolBrowser() {
+  const { protocols, filter, setFilter, loading } = useProtocols();
+  const [search, setSearch] = useState('');
+
+  // Client-side search filtering
+  const filteredProtocols = protocols.filter(protocol =>
+    protocol.name.toLowerCase().includes(search.toLowerCase()) ||
+    protocol.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="protocol-browser">
+      <div className="controls">
+        {/* Search Bar */}
+        <input
+          type="text"
+          placeholder="Search protocols..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
+        
+        {/* Type Filter */}
+        <select 
+          value={filter} 
+          onChange={(e) => setFilter(e.target.value)}
+          disabled={loading}
+        >
+          <option value="All">All Types</option>
+          <option value="Lending">Lending</option>
+          <option value="DEX">DEX</option>
+          <option value="Yield">Yield</option>
+          <option value="Stacking">Stacking</option>
+        </select>
+      </div>
+      
+      <div className="results">
+        <p>{filteredProtocols.length} protocols found</p>
+      </div>
+      
+      <div className="protocol-list">
+        {loading ? (
+          <div className="loading">Loading protocols...</div>
+        ) : filteredProtocols.length === 0 ? (
+          <div className="no-results">
+            <p>No protocols match your search</p>
+          </div>
+        ) : (
+          <table className="protocol-table">
+            <thead>
+              <tr>
+                <th>Protocol</th>
+                <th>Type</th>
+                <th>APY</th>
+                <th>TVL</th>
+                <th>Asset</th>
+                <th>Risk</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProtocols.map(protocol => (
+                <tr key={protocol.name}>
+                  <td>
+                    <strong>{protocol.name}</strong>
+                  </td>
+                  <td>
+                    <span className="badge">{protocol.type}</span>
+                  </td>
+                  <td className="apy">{protocol.apy}%</td>
+                  <td>{protocol.tvl}</td>
+                  <td>{protocol.asset}</td>
+                  <td>
+                    <span className={`risk-${protocol.risk.toLowerCase()}`}>
+                      {protocol.risk}
+                    </span>
+                  </td>
+                  <td>
+                    <a href={protocol.url} target="_blank">
+                      Visit →
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+```jsx Protocol Comparison
+import { useProtocols } from './hooks/useProtocols';
+
+function ProtocolComparison() {
+  const { protocols, filter, setFilter } = useProtocols();
+  
+  // Get top 3 protocols by APY
+  const topProtocols = protocols.slice(0, 3);
+
+  return (
+    <div className="comparison">
+      <h2>Top Protocols by APY</h2>
+      
+      <div className="filter-pills">
+        {['All', 'Lending', 'DEX', 'Yield', 'Stacking'].map(type => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={filter === type ? 'active' : ''}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+      
+      <div className="comparison-grid">
+        {topProtocols.map((protocol, index) => (
+          <div key={protocol.name} className="comparison-card">
+            <div className="rank">#{index + 1}</div>
+            <h3>{protocol.name}</h3>
+            <div className="apy-highlight">
+              <span className="apy-value">{protocol.apy}%</span>
+              <span className="apy-label">APY</span>
+            </div>
+            <ul className="protocol-features">
+              <li>Type: {protocol.type}</li>
+              <li>TVL: {protocol.tvl}</li>
+              <li>Asset: {protocol.asset}</li>
+              <li>Risk: {protocol.risk}</li>
+            </ul>
+            <a href={protocol.url} target="_blank" className="cta-button">
+              Start Earning
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Filter Types
+
+The hook supports these filter values:
+
+<CardGroup cols={2}>
+  <Card title="All" icon="layer-group">
+    Shows all protocols across all types. This is the default filter.
+    
+    **Use case:** Browse entire protocol ecosystem
+  </Card>
+  
+  <Card title="Lending" icon="hand-holding-dollar">
+    Shows only lending and borrowing protocols.
+    
+    **Examples:** Zest Protocol, Arkadiko
+    
+    **Use case:** Users wanting to lend assets or take loans
+  </Card>
+  
+  <Card title="DEX" icon="repeat">
+    Shows only decentralized exchanges and swap protocols.
+    
+    **Examples:** ALEX, Velar
+    
+    **Use case:** Users wanting to trade tokens
+  </Card>
+  
+  <Card title="Yield" icon="chart-line">
+    Shows only yield farming and liquidity mining protocols.
+    
+    **Use case:** Users seeking passive income opportunities
+  </Card>
+  
+  <Card title="Stacking" icon="layer-group">
+    Shows only STX stacking protocols and pools.
+    
+    **Examples:** StackingDAO, Xverse Stacking
+    
+    **Use case:** Users wanting to stack STX and earn BTC
+  </Card>
+</CardGroup>
+
+## Sorting Behavior
+
+Protocols are automatically sorted by APY in descending order (highest first):
+
+```javascript
+const sorted = [...filtered].sort((a, b) =>
+  parseFloat(b.apy) - parseFloat(a.apy)
+);
+```
+
+<Note>
+  This ensures users always see the highest-yielding opportunities first, regardless of the selected filter.
+</Note>
+
+## Loading Animation
+
+When changing filters, the hook triggers an 800ms loading state:
+
+```javascript
+useEffect(() => {
+  setLoading(true);
+  setTimeout(() => setLoading(false), 800);
+}, [filter]);
+```
+
+This creates a smooth transition effect when switching between protocol types.
+
+## Protocol Data Source
+
+The hook loads protocols from the static `PROTOCOLS` array:
+
+```javascript
+import { PROTOCOLS } from '../services/protocolData';
+
+const [protocols, setProtocols] = useState(PROTOCOLS);
+```
+
+<Info>
+  The protocol data is static. For real-time updates, consider integrating with DeFiLlama API or other data providers.
+</Info>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Show Filter Count" icon="hashtag">
+    Display the number of protocols matching the current filter to help users understand results.
+  </Card>
+  <Card title="Smooth Transitions" icon="wand-magic-sparkles">
+    Use the `loading` state to animate filter changes and improve perceived performance.
+  </Card>
+  <Card title="Empty States" icon="inbox">
+    Handle cases where no protocols match the filter (shouldn't happen with default data, but good practice).
+  </Card>
+  <Card title="External Links" icon="arrow-up-right-from-square">
+    Always open protocol URLs in new tabs with `target="_blank"` and `rel="noopener noreferrer"`.
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Filter Pills with Active State
+
+```javascript
+function FilterPills() {
+  const { filter, setFilter } = useProtocols();
+  
+  const filters = ['All', 'Lending', 'DEX', 'Yield', 'Stacking'];
+  
+  return (
+    <div className="filter-pills">
+      {filters.map(f => (
+        <button
+          key={f}
+          onClick={() => setFilter(f)}
+          className={filter === f ? 'active' : ''}
+        >
+          {f}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+### Protocol Count Badge
+
+```javascript
+function ProtocolHeader() {
+  const { protocols, filter } = useProtocols();
+  
+  return (
+    <div className="header">
+      <h1>DeFi Protocols</h1>
+      <span className="count">
+        {protocols.length} {filter !== 'All' ? filter : ''} protocols
+      </span>
+    </div>
+  );
+}
+```
+
+### Grid with Responsive Layout
+
+```javascript
+function ResponsiveProtocolGrid() {
+  const { protocols, loading } = useProtocols();
+  
+  if (loading) return <LoadingSkeleton />;
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {protocols.map(protocol => (
+        <ProtocolCard key={protocol.name} protocol={protocol} />
+      ))}
+    </div>
+  );
+}
+```
+
+## Protocol Object Structure
+
+Each protocol in the `protocols` array has this structure:
+
+```typescript
+interface Protocol {
+  name: string;          // "Zest Protocol"
+  type: string;          // "Lending" | "DEX" | "Yield" | "Stacking"
+  apy: string;           // "8.2"
+  tvl: string;           // "$48.2M"
+  asset: string;         // "sBTC" | "STX" | "sBTC, STX"
+  risk: string;          // "Low" | "Medium" | "High"
+  description: string;   // Protocol description
+  url: string;           // "https://zestprotocol.com"
+  logo?: string;         // Optional logo URL
+}
+```
+
+## Related Hooks
+
+- [useWallet](/api/hooks/use-wallet) - Connect wallet to interact with protocols
+- [useAIAdvisor](/api/hooks/use-ai-advisor) - Get AI recommendations for protocols
+- [usePortfolio](/api/hooks/use-portfolio) - Fetch user portfolio data
+
+## Related Services
+
+- [Protocol Data](/api/protocol-data) - Static protocol configuration
+- [Stacks API](/api/stacks-api) - Blockchain data fetching

@@ -1,0 +1,559 @@
+---
+title: Using the AI Copilot
+description: Get personalized Bitcoin DeFi strategies with Staxiq's AI Copilot powered by Google Gemini
+---
+
+## Overview
+
+The Staxiq AI Copilot is an intelligent DeFi advisor that analyzes your portfolio and generates personalized investment strategies tailored to your risk profile and holdings. Powered by Google Gemini, it provides actionable recommendations across the Stacks ecosystem.
+
+<Note>
+**What makes it unique**: Every strategy is cryptographically anchored to Bitcoin via Stacks, creating a permanent, verifiable record of your AI-generated advice.
+</Note>
+
+## Getting Started
+
+### Prerequisites
+
+Before using the AI Copilot:
+
+<Steps>
+  <Step title="Connect Your Wallet">
+    The Copilot requires an active wallet connection to analyze your portfolio.
+    
+    See [Connecting Your Wallet](/guides/connecting-wallet) for instructions.
+  </Step>
+  
+  <Step title="Have Some Assets">
+    While the Copilot works with any balance, having STX or sBTC enables more relevant recommendations.
+  </Step>
+  
+  <Step title="Choose Your Risk Profile">
+    Decide if you're a HODLer, Builder, or Degen (more on this below).
+  </Step>
+</Steps>
+
+## How the AI Copilot Works
+
+The AI Copilot follows this workflow:
+
+```javascript
+async function handleGetStrategy() {
+  // 1. Gather your portfolio data
+  const result = await getAIStrategy({
+    address,
+    stxBalance,
+    sbtcBalance,
+    totalUSD,
+    riskProfile,
+    protocols,
+    strategyCount,
+    txCount,
+  });
+  
+  // 2. Generate personalized strategy with Gemini
+  setStrategy(result);
+  
+  // 3. Anchor strategy hash to Bitcoin
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(result));
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  const txId = await anchorStrategy(hashHex, topProtocol);
+  setAnchorTxId(txId);
+}
+```
+
+<CardGroup cols={3}>
+  <Card title="1. Analyze" icon="magnifying-glass-chart">
+    Reviews your wallet balance, transaction history, and existing protocol positions
+  </Card>
+  
+  <Card title="2. Generate" icon="wand-magic-sparkles">
+    Creates a personalized strategy using AI based on your risk profile
+  </Card>
+  
+  <Card title="3. Anchor" icon="anchor">
+    Hashes your strategy and anchors it to Bitcoin for immutable record-keeping
+  </Card>
+</CardGroup>
+
+## Selecting Your Risk Profile
+
+The Copilot offers three risk profiles:
+
+### HODLer (Conservative)
+
+```javascript
+{
+  label: 'HODLer',
+  color: '#22c55e',  // Green
+  risk: 'Low'
+}
+```
+
+**Best for**:
+- Long-term Bitcoin holders
+- Risk-averse investors
+- First-time DeFi users
+
+**Strategy focus**:
+- Low-risk protocols (Zest, StackingDAO)
+- Stable yield generation (7-10% APY)
+- Capital preservation over maximum returns
+
+### Builder (Balanced)
+
+```javascript
+{
+  label: 'Builder',
+  color: '#f59e0b',  // Orange
+  risk: 'Medium'
+}
+```
+
+**Best for**:
+- Active DeFi participants
+- Moderate risk tolerance
+- Portfolio diversifiers
+
+**Strategy focus**:
+- Mix of lending and DEX protocols
+- Balanced risk/reward (10-15% APY)
+- Multi-protocol allocation
+
+### Degen (Aggressive)
+
+```javascript
+{
+  label: 'Degen',
+  color: '#ef4444',  // Red
+  risk: 'High'
+}
+```
+
+**Best for**:
+- Experienced DeFi users
+- High risk tolerance
+- Yield maximizers
+
+**Strategy focus**:
+- High-yield protocols (Hermetica, leveraged positions)
+- Aggressive APY targets (15-25%+)
+- Advanced strategies like compounding
+
+### Selecting Your Profile
+
+```jsx
+<div className="grid grid-cols-3 gap-2">
+  {RISK_OPTIONS.map(r => (
+    <button
+      onClick={() => setRiskProfile(r)}
+      className="py-1.5 px-2 rounded-lg text-xs font-bold"
+      style={{
+        background: active ? cfg.bg : 'transparent',
+        border: `1px solid ${active ? cfg.border : s('border')}`,
+        color: active ? cfg.color : s('muted'),
+      }}
+    >
+      {cfg.label}
+    </button>
+  ))}
+</div>
+```
+
+<Tip>
+You can change your risk profile anytime and regenerate strategies to compare different approaches.
+</Tip>
+
+## Generating Your Strategy
+
+<Steps>
+  <Step title="Select Risk Profile">
+    Choose HODLer, Builder, or Degen based on your risk tolerance.
+  </Step>
+  
+  <Step title="Click Generate Button">
+    Click **"🎯 Get My Personalized Strategy"** to start the AI analysis:
+    
+    ```jsx
+    <button
+      onClick={handleGetStrategy}
+      disabled={loading || anchoring}
+      style={{
+        background: 'linear-gradient(135deg, #F7931A, #e8820a)',
+        boxShadow: '0 4px 16px #F7931A33',
+      }}
+    >
+      🎯 Get My Personalized Strategy
+    </button>
+    ```
+  </Step>
+  
+  <Step title="Wait for Analysis">
+    The Copilot analyzes your portfolio (usually takes 2-5 seconds):
+    
+    ```jsx
+    {loading && (
+      <>
+        <svg className="animate-spin w-4 h-4" />
+        Analyzing your portfolio…
+      </>
+    )}
+    ```
+  </Step>
+  
+  <Step title="Review Strategy">
+    Your personalized strategy appears with specific recommendations, APY projections, and actionable next steps.
+  </Step>
+  
+  <Step title="Strategy Anchored to Bitcoin">
+    Once generated, the strategy is automatically hashed and anchored to Bitcoin:
+    
+    ```jsx
+    {anchoring && (
+      <>
+        <svg className="animate-spin w-4 h-4" />
+        Anchoring to Bitcoin…
+      </>
+    )}
+    ```
+  </Step>
+</Steps>
+
+## Understanding Your Strategy
+
+### Strategy Structure
+
+Strategies are formatted with emoji-labeled sections for easy scanning:
+
+```javascript
+function parseStrategy(text) {
+  const sections = [];
+  const SECTION_EMOJIS = ['👋', '🎯', '📖', '📊', '💰', '🛡️', '🚀', '⚡', '🔁', '⚠️', '💡', '✅'];
+  
+  // Parses AI output into structured sections
+  for (const line of lines) {
+    const startsSection = SECTION_EMOJIS.some(e => line.trim().startsWith(e));
+    if (startsSection) {
+      sections.push({ heading: line, body: [] });
+    }
+  }
+  return sections;
+}
+```
+
+### Section Color Coding
+
+Different section types are color-coded:
+
+```javascript
+function getSectionColor(heading, isDark) {
+  if (heading.startsWith('⚠️') || heading.startsWith('🛡️')) 
+    return '#f59e0b';  // Warning/Risk - Orange
+  if (heading.startsWith('🚀') || heading.startsWith('✅')) 
+    return '#22c55e';  // Success/Action - Green
+  if (heading.startsWith('💰') || heading.startsWith('📊')) 
+    return '#F7931A';  // Financial - Bitcoin Orange
+  if (heading.startsWith('⚡') || heading.startsWith('🔁')) 
+    return '#3B82F6';  // Optimization - Blue
+}
+```
+
+### Strategy for New Users
+
+If you're new to DeFi, you get a welcoming, educational strategy:
+
+```javascript
+const isNewUser = strategyCount === 0 && txCount < 3;
+
+if (isNewUser) {
+  // Format includes:
+  // 👋 WELCOME TO BITCOIN DEFI
+  // 🎯 YOUR FIRST STRATEGY: [Simple recommendation]
+  // 📖 WHAT THIS MEANS: [Plain English explanation]
+  // 💰 WHAT YOU COULD EARN: [Specific projection]
+  // 🛡️ IS IT SAFE?: [Risk explanation]
+  // 🚀 HOW TO START: [Step by step]
+}
+```
+
+<Note>
+New user detection is automatic based on your transaction history and previous strategy count.
+</Note>
+
+### Strategy for Experienced Users
+
+Experienced users receive advanced, multi-protocol strategies:
+
+```javascript
+const isExperienced = strategyCount > 5 || txCount > 20;
+
+if (isExperienced) {
+  // Format includes:
+  // 🎯 STRATEGY: [Bold recommendation]
+  // 📊 ALLOCATION: [Multi-protocol % breakdown]
+  // 💰 PROJECTED RETURN: [Specific APY and USD return]
+  // ⚡ OPTIMIZATION: [Advanced yield tactics]
+  // ⚠️ KEY RISK: [Critical risk factors]
+  // 🚀 EXECUTE NOW: [Immediate action]
+}
+```
+
+## AI Prompt Engineering
+
+The Copilot uses a sophisticated prompt that includes:
+
+```javascript
+const prompt = `You are Staxiq, the smartest Bitcoin DeFi copilot on Stacks.
+
+${userContext}  // Adapts to new vs. experienced users
+
+USER PORTFOLIO:
+- Wallet: ${address}
+- STX Balance: ${stxBalance} STX
+- sBTC Balance: ${sbtcBalance} sBTC
+- Total Value: $${totalUSD} USD
+- Risk Profile: ${riskProfile}
+- Strategies Generated: ${strategyCount}
+- Transaction History: ${txCount} transactions
+
+AVAILABLE PROTOCOLS ON STACKS:
+${protocolSummary}  // Live APY, TVL, risk data
+
+INSTRUCTIONS:
+${formatInstructions}  // Ensures consistent output format
+`;
+```
+
+### Protocol Data Integration
+
+The AI receives live protocol data:
+
+```javascript
+const protocolSummary = protocols
+  .map(p => `- ${p.name}: ${p.type}, ${p.apy}% APY, ${p.risk} risk, accepts ${p.asset}, TVL ${p.tvl}`)
+  .join('\n');
+
+// Example output:
+// - Zest Protocol: Lending, 8.2% APY, Low risk, accepts sBTC, TVL $48.2M
+// - ALEX Lab: DEX, 15.1% APY, Medium risk, accepts sBTC/STX, TVL $124.5M
+```
+
+## Bitcoin Anchoring
+
+Every strategy generated is cryptographically anchored to Bitcoin:
+
+### How Anchoring Works
+
+```javascript
+// 1. Hash the strategy text
+const encoder = new TextEncoder();
+const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(result));
+const hashHex = Array.from(new Uint8Array(hashBuffer))
+  .map(b => b.toString(16).padStart(2, '0'))
+  .join('')
+  .slice(0, 64);
+
+// 2. Anchor hash to Bitcoin via Stacks
+const txId = await anchorStrategy(hashHex, topProtocol);
+
+// 3. Display transaction on Stacks Explorer
+setAnchorTxId(txId);
+setAnchored(true);
+```
+
+### Why Anchor Strategies?
+
+<CardGroup cols={2}>
+  <Card title="Immutable Record" icon="file-shield">
+    Creates a permanent, tamper-proof record of AI advice on Bitcoin
+  </Card>
+  
+  <Card title="Transparency" icon="eye">
+    Anyone can verify when and what strategy was generated
+  </Card>
+  
+  <Card title="Accountability" icon="scale-balanced">
+    Holds the AI accountable to its recommendations over time
+  </Card>
+  
+  <Card title="Historical Tracking" icon="clock-rotate-left">
+    Build a provable history of your DeFi decision-making
+  </Card>
+</CardGroup>
+
+### Viewing Anchored Strategies
+
+Once anchored, you'll see:
+
+```jsx
+{anchored && anchorTxId && (
+  <div style={{ background: '#F7931A0a', border: '1px solid #F7931A33' }}>
+    <span>⛓️ Strategy anchored on Bitcoin via Stacks</span>
+    <a
+      href={`https://explorer.hiro.so/txid/${anchorTxId}?chain=testnet`}
+      target="_blank"
+    >
+      {anchorTxId.slice(0, 10)}…{anchorTxId.slice(-6)} ↗
+    </a>
+  </div>
+)}
+```
+
+Click the transaction ID to view it on the Stacks Explorer.
+
+## Strategy Counter
+
+Your total anchored strategies are tracked:
+
+```javascript
+useEffect(() => {
+  if (address) {
+    getStrategyCount(address).then(c => setStrategyCount(Number(c) || 0));
+  }
+}, [address]);
+```
+
+```jsx
+{strategyCount > 0 && (
+  <div style={{ background: '#F7931A11', color: '#F7931A' }}>
+    ⛓️ {strategyCount} anchored on Bitcoin
+  </div>
+)}
+```
+
+<Tip>
+Each strategy you generate increments your counter, building your DeFi track record.
+</Tip>
+
+## Regenerating Strategies
+
+You can regenerate strategies anytime:
+
+```jsx
+<button onClick={handleGetStrategy}>
+  {strategy ? 'Regenerate Strategy' : '🎯 Get My Personalized Strategy'}
+</button>
+```
+
+**When to regenerate**:
+- Your portfolio balance changes significantly
+- You want to try a different risk profile
+- Market conditions have changed
+- You've completed a previous strategy and want new recommendations
+
+<Warning>
+Each regeneration creates a new anchored strategy and increments your counter. This is by design to maintain a complete history.
+</Warning>
+
+## Demo Mode
+
+The Copilot supports a demo mode with pre-loaded strategies:
+
+```javascript
+useEffect(() => {
+  if (demoStrategy) {
+    setStrategy(demoStrategy);
+    setSections(parseStrategy(demoStrategy));
+  }
+}, [demoStrategy]);
+
+async function handleGetStrategy() {
+  if (demoStrategy) {
+    // In demo mode, just re-parse the demo strategy
+    setSections(parseStrategy(demoStrategy));
+    return;
+  }
+  // ... normal flow
+}
+```
+
+## Troubleshooting
+
+### Strategy Generation Fails
+
+<Warning>
+If strategy generation fails:
+
+```javascript
+catch (err) {
+  setError('Failed to generate strategy. Check your API key or try again.');
+}
+```
+
+**Solutions**:
+1. Check that your Gemini API key is configured
+2. Verify you have an internet connection
+3. Try again in a few seconds (API might be rate-limited)
+4. Check the browser console for detailed errors
+</Warning>
+
+### Anchoring Fails but Strategy Generated
+
+If the strategy generates but anchoring fails:
+
+```javascript
+try {
+  const txId = await anchorStrategy(hashHex, topProtocol);
+  setAnchorTxId(txId);
+  setAnchored(true);
+} catch (anchorErr) {
+  console.warn('Anchoring failed silently:', anchorErr);
+  // Strategy still usable, just not anchored
+}
+```
+
+You can still use the strategy—it just won't be anchored to Bitcoin.
+
+### Copilot Shows "Connect Wallet" Message
+
+If you see the "Connect your wallet" prompt:
+
+```jsx
+if (!connected) {
+  return (
+    <div>
+      <p>Connect your wallet to get a personalized Bitcoin DeFi strategy</p>
+    </div>
+  );
+}
+```
+
+[Connect your wallet](/guides/connecting-wallet) first.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Conservative" icon="shield-check">
+    New to DeFi? Start with HODLer profile and work your way up
+  </Card>
+  
+  <Card title="Compare Profiles" icon="code-compare">
+    Generate strategies with different risk profiles to understand trade-offs
+  </Card>
+  
+  <Card title="Review Before Acting" icon="magnifying-glass">
+    Always review the strategy carefully before moving funds
+  </Card>
+  
+  <Card title="Track Your History" icon="list-check">
+    Use the strategy counter to see how your approach evolves over time
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+With your AI-generated strategy:
+
+- [Compare protocols](/guides/comparing-protocols) mentioned in your strategy
+- [Understand the risks](/guides/understanding-risk) of recommended protocols
+- Execute your strategy by visiting the protocol websites
+
+## Related Resources
+
+- [API Reference: AI Service](/api/ai-service)
+- [API Reference: AI Advisor Hook](/api/hooks/use-ai-advisor)
+- [Understanding Risk Profiles](/guides/understanding-risk)
+- [Protocol Comparison](/guides/comparing-protocols)

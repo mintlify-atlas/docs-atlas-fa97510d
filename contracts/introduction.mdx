@@ -1,0 +1,125 @@
+---
+title: 'Smart Contracts Overview'
+description: 'Learn about Staxiq smart contracts on the Stacks blockchain'
+icon: 'file-contract'
+---
+
+## Introduction
+
+Staxiq leverages smart contracts on the **Stacks blockchain** (Bitcoin Layer 2) to provide transparent, verifiable, and immutable records of user preferences and AI-generated trading strategies.
+
+<CardGroup cols={2}>
+  <Card title="User Profiles" icon="user" href="/contracts/user-profile/overview">
+    Store risk preferences on-chain with tamper-proof records
+  </Card>
+  <Card title="Strategy History" icon="clock-rotate-left" href="/contracts/user-profile/overview">
+    Anchor AI strategy recommendations to the blockchain
+  </Card>
+  <Card title="Bitcoin Security" icon="bitcoin" href="/contracts/architecture">
+    Inherit Bitcoin's security through Stacks L2
+  </Card>
+  <Card title="Open Source" icon="code" href="https://github.com/staxiq/staxiq-contracts">
+    Fully auditable and verifiable contract code
+  </Card>
+</CardGroup>
+
+## Why Smart Contracts?
+
+Staxiq uses blockchain technology to provide:
+
+### Transparency
+All risk profiles and strategy recommendations are permanently recorded on-chain, creating an immutable audit trail that users can verify at any time.
+
+### User Ownership
+Users maintain complete control over their data. Risk profiles are stored under the user's wallet address, not in a centralized database.
+
+### Verifiable AI
+Every AI-generated strategy recommendation is hashed and anchored to the blockchain, providing cryptographic proof of what was recommended and when.
+
+### Regulatory Compliance
+On-chain records provide transparent documentation for regulatory requirements while maintaining user privacy.
+
+## Technology Stack
+
+<CodeGroup>
+```clarity Clarity Contract
+;; Staxiq User Profile Contract
+;; Built on Stacks Bitcoin L2
+
+(define-map user-profiles
+  principal
+  {
+    risk-level: uint,
+    created-at: uint,
+    updated-at: uint,
+    strategy-count: uint
+  }
+)
+```
+
+```javascript Frontend Integration
+import { makeContractCall, uintCV } from '@stacks/transactions';
+
+const txOptions = {
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'set-risk-profile',
+  functionArgs: [uintCV(2)]
+};
+```
+</CodeGroup>
+
+### Core Components
+
+- **Blockchain**: Stacks (Bitcoin Layer 2)
+- **Smart Contract Language**: Clarity (decidable, non-Turing complete)
+- **Development Framework**: Clarinet
+- **Testing**: Vitest with Clarinet SDK
+- **Frontend SDK**: @stacks/transactions, @stacks/blockchain-api-client
+
+## Contract Architecture
+
+The Staxiq smart contracts are designed with simplicity and security in mind:
+
+- **Single Contract Design**: All user profile functionality in one contract
+- **Read-Only Functions**: Gas-free data queries
+- **Public Functions**: Authenticated writes requiring user signatures
+- **No Admin Functions**: Fully decentralized with no owner privileges after deployment
+
+## Getting Started
+
+<Steps>
+  <Step title="Understand the Architecture">
+    Read the [Architecture](/contracts/architecture) page to understand contract data structures and design decisions.
+  </Step>
+  <Step title="Explore Functions">
+    Review the [User Profile Functions](/contracts/user-profile/functions) to see all available contract methods.
+  </Step>
+  <Step title="Integrate Frontend">
+    Follow the [Integration Guide](/contracts/user-profile/integration) to connect your frontend application.
+  </Step>
+  <Step title="Deploy and Test">
+    Learn about [Deployment](/contracts/deployment) and [Testing](/contracts/testing) processes.
+  </Step>
+</Steps>
+
+## Contract Address
+
+<Note>
+  The Staxiq User Profile contract is deployed at:
+  
+  **Testnet**: `ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ.staxiq-user-profile`
+  
+  Mainnet deployment coming soon.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Contract Architecture" icon="sitemap" href="/contracts/architecture">
+    Learn about data structures and design patterns
+  </Card>
+  <Card title="User Profile Contract" icon="user-circle" href="/contracts/user-profile/overview">
+    Explore the user profile contract capabilities
+  </Card>
+</CardGroup>

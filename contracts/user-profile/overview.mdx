@@ -1,0 +1,258 @@
+---
+title: 'User Profile Contract'
+description: 'Store user risk preferences and AI strategy history on the Stacks blockchain'
+icon: 'user-circle'
+---
+
+## Overview
+
+The **Staxiq User Profile Contract** (`staxiq-user-profile.clar`) is a Clarity smart contract that stores user risk preferences and AI-generated strategy recommendations on the Stacks blockchain.
+
+<CardGroup cols={2}>
+  <Card title="Risk Profiles" icon="gauge-high">
+    Users set Conservative, Balanced, or Aggressive risk preferences
+  </Card>
+  <Card title="Strategy History" icon="clock-rotate-left">
+    AI strategy recommendations are hashed and anchored on-chain
+  </Card>
+  <Card title="Immutable Records" icon="lock">
+    All data is permanently stored and cannot be altered
+  </Card>
+  <Card title="User-Owned Data" icon="key">
+    Users maintain full control via their wallet address
+  </Card>
+</CardGroup>
+
+## Core Capabilities
+
+### 1. Risk Profile Management
+
+Users can set and update their risk tolerance level on-chain:
+
+```clarity contracts/staxiq-user-profile.clar
+(define-public (set-risk-profile (risk-level uint))
+  ;; Saves or updates user risk preference
+  ;; Validates input is 1, 2, or 3
+  ;; Tracks created-at and updated-at block heights
+)
+```
+
+**Risk Levels:**
+- `1` - Conservative: Low-risk, stable strategies
+- `2` - Balanced: Moderate risk/reward
+- `3` - Aggressive: High-risk, high-reward
+
+### 2. Strategy Anchoring
+
+AI-generated strategies are hashed and stored on-chain for transparency:
+
+```clarity contracts/staxiq-user-profile.clar
+(define-public (save-strategy
+  (strategy-hash (string-ascii 64))
+  (protocol (string-ascii 32))
+)
+  ;; Anchors AI strategy to blockchain
+  ;; Requires existing risk profile
+  ;; Increments strategy counter
+  ;; Returns new strategy-id
+)
+```
+
+Each saved strategy includes:
+- Cryptographic hash of strategy details
+- Target DeFi protocol (e.g., "ALEX", "Velar")
+- User's risk level at time of generation
+- Block height timestamp
+
+### 3. Profile Queries
+
+Read user data without gas fees:
+
+```clarity contracts/staxiq-user-profile.clar
+;; Get full user profile
+(define-read-only (get-user-profile (user principal)))
+
+;; Check if user has a profile
+(define-read-only (has-profile (user principal)))
+
+;; Get risk level as human-readable string
+(define-read-only (get-risk-label (user principal)))
+
+;; Get total strategy count
+(define-read-only (get-strategy-count (user principal)))
+
+;; Get specific strategy details
+(define-read-only (get-strategy (user principal) (strategy-id uint)))
+```
+
+## Data Structures
+
+### User Profile
+
+<ResponseField name="user-profiles" type="map">
+  Maps wallet address to profile data
+  
+  <Expandable title="Profile Fields">
+    <ResponseField name="risk-level" type="uint" required>
+      1 = Conservative, 2 = Balanced, 3 = Aggressive
+    </ResponseField>
+    <ResponseField name="created-at" type="uint" required>
+      Block height when profile was first created
+    </ResponseField>
+    <ResponseField name="updated-at" type="uint" required>
+      Block height of most recent update
+    </ResponseField>
+    <ResponseField name="strategy-count" type="uint" required>
+      Total number of strategies saved
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Strategy Record
+
+<ResponseField name="strategy-history" type="map">
+  Maps (user, strategy-id) to strategy details
+  
+  <Expandable title="Strategy Fields">
+    <ResponseField name="risk-level" type="uint" required>
+      User's risk level when strategy was generated
+    </ResponseField>
+    <ResponseField name="strategy-hash" type="string-ascii" maxLength="64" required>
+      SHA-256 hash of complete strategy details
+    </ResponseField>
+    <ResponseField name="protocol" type="string-ascii" maxLength="32" required>
+      Target DeFi protocol name
+    </ResponseField>
+    <ResponseField name="timestamp" type="uint" required>
+      Block height when strategy was saved
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Usage Flow
+
+<Steps>
+  <Step title="Connect Wallet">
+    User connects their Stacks wallet (Hiro, Xverse, Leather)
+  </Step>
+  <Step title="Set Risk Profile">
+    User selects risk tolerance and calls `set-risk-profile`
+  </Step>
+  <Step title="Generate Strategy">
+    AI agent creates personalized strategy based on risk profile
+  </Step>
+  <Step title="Anchor Strategy">
+    Strategy is hashed and saved on-chain via `save-strategy`
+  </Step>
+  <Step title="View History">
+    User can query all past strategies and profile changes
+  </Step>
+</Steps>
+
+## Example: Complete User Journey
+
+<CodeGroup>
+```javascript 1. Set Risk Profile
+import { saveRiskProfile } from './services/contractService';
+
+// User selects "Balanced" risk level
+const txId = await saveRiskProfile('Balanced');
+console.log('Profile saved:', txId);
+// Returns transaction ID on blockchain
+```
+
+```javascript 2. Generate Strategy
+import { generateStrategy } from './services/aiService';
+
+// AI creates strategy based on user's risk profile
+const strategy = await generateStrategy(userAddress);
+// Returns: { protocol: 'ALEX', actions: [...], expectedAPY: 12.5 }
+```
+
+```javascript 3. Anchor Strategy
+import { anchorStrategy } from './services/contractService';
+import crypto from 'crypto';
+
+// Hash the strategy for on-chain anchoring
+const hash = crypto
+  .createHash('sha256')
+  .update(JSON.stringify(strategy))
+  .digest('hex');
+
+const txId = await anchorStrategy(hash, 'ALEX');
+console.log('Strategy anchored:', txId);
+```
+
+```javascript 4. Query History
+import { getUserProfile, getStrategyCount } from './services/contractService';
+
+// Get user's profile
+const profile = await getUserProfile(userAddress);
+console.log('Risk level:', profile.risk_level);
+console.log('Total strategies:', profile.strategy_count);
+
+// Get strategy count
+const count = await getStrategyCount(userAddress);
+console.log('Strategies saved:', count);
+```
+</CodeGroup>
+
+## Benefits
+
+### For Users
+
+<CardGroup cols={2}>
+  <Card title="Transparency" icon="eye">
+    View complete history of AI recommendations and profile changes
+  </Card>
+  <Card title="Ownership" icon="user">
+    Data is tied to your wallet, not a centralized database
+  </Card>
+  <Card title="Verification" icon="shield-check">
+    Cryptographically prove what was recommended and when
+  </Card>
+  <Card title="Portability" icon="arrows-turn-right">
+    Take your data to any compatible platform
+  </Card>
+</CardGroup>
+
+### For Staxiq
+
+- **Regulatory Compliance**: Immutable audit trail for compliance requirements
+- **Trust Building**: Users can verify AI recommendations weren't changed
+- **Data Integrity**: Blockchain prevents data tampering or loss
+- **Decentralization**: No single point of failure for user data
+
+## Contract Address
+
+<Note>
+  **Testnet**: `ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ.staxiq-user-profile`
+  
+  View on explorer: [Stacks Testnet Explorer](https://explorer.hiro.so/txid/)
+</Note>
+
+## Limitations
+
+<Warning>
+  - **Strategy content is not stored**: Only a hash is saved on-chain to save space and gas. Full strategy details should be stored off-chain.
+  - **No deletion**: Data cannot be removed once written. Profiles can be updated but history remains.
+  - **Gas costs**: Writing data to blockchain requires STX tokens for transaction fees.
+  - **Block time**: Transactions take ~10 minutes to confirm (Bitcoin block time).
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Function Reference" icon="function" href="/contracts/user-profile/functions">
+    Detailed documentation of all contract functions
+  </Card>
+  <Card title="Integration Guide" icon="code" href="/contracts/user-profile/integration">
+    Learn how to call contracts from your frontend
+  </Card>
+  <Card title="Testing" icon="flask" href="/contracts/testing">
+    Run tests and verify contract behavior
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/contracts/deployment">
+    Deploy contracts to testnet or mainnet
+  </Card>
+</CardGroup>

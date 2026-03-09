@@ -1,0 +1,320 @@
+---
+title: 'useWallet'
+description: 'Manage Stacks wallet connection, authentication, and address display'
+icon: 'wallet'
+---
+
+## Overview
+
+The `useWallet` hook provides complete wallet management for Stacks blockchain authentication. It handles connecting/disconnecting wallets, managing user sessions, and formatting addresses for display.
+
+**Source:** `src/hooks/useWallet.js`
+
+## Import
+
+```javascript
+import { useWallet } from './hooks/useWallet';
+```
+
+## Hook Signature
+
+```javascript
+function useWallet(): {
+  connected: boolean,
+  address: string | null,
+  loading: boolean,
+  shortAddress: (addr: string) => string,
+  connectWallet: () => void,
+  disconnectWallet: () => void,
+}
+```
+
+## Configuration
+
+The hook uses the `NetworkContext` to determine whether to use mainnet or testnet addresses:
+
+```javascript
+import { useNetwork } from '../context/NetworkContext';
+
+const { network } = useNetwork(); // 'mainnet' or 'testnet'
+```
+
+## Return Values
+
+<ResponseField name="connected" type="boolean">
+  Whether a wallet is currently connected. `true` if user is authenticated, `false` otherwise.
+</ResponseField>
+
+<ResponseField name="address" type="string | null">
+  The user's Stacks address for the active network. Returns the testnet address if `network === 'testnet'`, otherwise returns mainnet address. `null` if not connected.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while authentication popup is active, `false` otherwise. Useful for disabling UI elements during connection.
+</ResponseField>
+
+<ResponseField name="shortAddress" type="function">
+  Utility function to format addresses for display.
+  
+  **Signature:** `(addr: string) => string`
+  
+  **Example:** `"SP2H8...7SA5"` (first 5 + last 4 characters)
+</ResponseField>
+
+<ResponseField name="connectWallet" type="function">
+  Opens the Stacks wallet authentication popup. Handles the complete authentication flow including:
+  - Launching wallet selector (Leather, Xverse, etc.)
+  - Processing authentication callback
+  - Extracting address for current network
+  - Updating connection state
+  
+  **Signature:** `() => void`
+</ResponseField>
+
+<ResponseField name="disconnectWallet" type="function">
+  Signs out the current user, clears session data, and reloads the page to reset application state.
+  
+  **Signature:** `() => void`
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```jsx Basic Connection Button
+import { useWallet } from './hooks/useWallet';
+
+function WalletButton() {
+  const { connected, address, loading, shortAddress, connectWallet, disconnectWallet } = useWallet();
+
+  if (connected) {
+    return (
+      <div>
+        <p>Connected: {shortAddress(address)}</p>
+        <button onClick={disconnectWallet}>Disconnect</button>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={connectWallet} disabled={loading}>
+      {loading ? 'Connecting...' : 'Connect Wallet'}
+    </button>
+  );
+}
+```
+
+```jsx Navbar Component
+import { useWallet } from './hooks/useWallet';
+
+function Navbar() {
+  const { 
+    connected, 
+    address, 
+    loading, 
+    shortAddress, 
+    connectWallet, 
+    disconnectWallet 
+  } = useWallet();
+
+  return (
+    <nav className="navbar">
+      <div className="logo">Staxiq</div>
+      
+      <div className="wallet-section">
+        {connected ? (
+          <div className="wallet-info">
+            <span className="address">{shortAddress(address)}</span>
+            <button 
+              onClick={disconnectWallet}
+              className="disconnect-btn"
+            >
+              Disconnect
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={connectWallet} 
+            disabled={loading}
+            className="connect-btn"
+          >
+            {loading ? (
+              <span className="spinner" />
+            ) : (
+              'Connect Wallet'
+            )}
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+}
+```
+
+```jsx Protected Dashboard
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+
+function Dashboard() {
+  const { connected, address, connectWallet } = useWallet();
+  const { portfolio, loading } = usePortfolio(address);
+
+  if (!connected) {
+    return (
+      <div className="connect-prompt">
+        <h2>Connect your wallet to view dashboard</h2>
+        <button onClick={connectWallet}>Connect Wallet</button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div>Loading portfolio...</div>;
+  }
+
+  return (
+    <div className="dashboard">
+      <h1>Portfolio</h1>
+      <p>STX Balance: {portfolio.stxBalance}</p>
+      <p>sBTC Balance: {portfolio.sbtcBalance}</p>
+      <p>Total USD: ${portfolio.totalUSD}</p>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Authentication Flow
+
+The hook implements the standard Stacks authentication flow:
+
+<Steps>
+  <Step title="User clicks connect">
+    Call `connectWallet()` to initiate authentication
+  </Step>
+  
+  <Step title="Wallet popup appears">
+    User selects their Stacks wallet (Leather, Xverse, etc.) and approves connection
+  </Step>
+  
+  <Step title="Authentication callback">
+    Hook receives user session data and extracts the appropriate address (mainnet or testnet)
+  </Step>
+  
+  <Step title="State updates">
+    `connected` becomes `true`, `address` is populated, and `loading` returns to `false`
+  </Step>
+  
+  <Step title="Session persists">
+    User remains connected across page reloads until they explicitly disconnect
+  </Step>
+</Steps>
+
+## Network Handling
+
+The hook automatically selects the correct address based on your network configuration:
+
+```javascript
+const getStxAddress = (userData) => {
+  return network === 'testnet'
+    ? userData?.profile?.stxAddress?.testnet
+    : userData?.profile?.stxAddress?.mainnet;
+};
+```
+
+<Note>
+  Make sure your `NetworkContext` is properly configured in your app's root component to ensure the correct network addresses are used.
+</Note>
+
+## App Configuration
+
+The hook uses these app details for wallet authentication:
+
+```javascript
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+
+appDetails: {
+  name: 'Staxiq',
+  icon: window.location.origin + '/favicon.ico',
+}
+```
+
+## Session Persistence
+
+On component mount, the hook checks for existing sessions:
+
+```javascript
+useEffect(() => {
+  if (userSession.isUserSignedIn()) {
+    const userData = userSession.loadUserData();
+    const addr = getStxAddress(userData);
+    if (addr) {
+      setAddress(addr);
+      setConnected(true);
+    }
+  }
+}, []);
+```
+
+This ensures users remain connected across page reloads.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Loading States" icon="spinner">
+    Always check `loading` state to disable buttons and prevent double-clicks during authentication
+  </Card>
+  <Card title="Conditional Rendering" icon="eye">
+    Use `connected` to show/hide wallet-dependent features and protect sensitive routes
+  </Card>
+  <Card title="Address Display" icon="text">
+    Always use `shortAddress()` for displaying addresses in UI to improve readability
+  </Card>
+  <Card title="Error Handling" icon="shield">
+    The hook handles errors internally, but you can add try-catch in `connectWallet` if needed
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Conditional Feature Access
+
+```javascript
+function AIAdvisor() {
+  const { connected, address } = useWallet();
+  
+  if (!connected) {
+    return <ConnectPrompt />;
+  }
+  
+  return <AIStrategyGenerator address={address} />;
+}
+```
+
+### Multiple Hook Composition
+
+```javascript
+function Portfolio() {
+  const { connected, address } = useWallet();
+  const { portfolio } = usePortfolio(address);
+  const { strategy } = useAIAdvisor({ address, ...portfolio });
+  
+  return (
+    <div>
+      <WalletInfo address={address} />
+      <PortfolioSummary data={portfolio} />
+      <AIStrategy strategy={strategy} />
+    </div>
+  );
+}
+```
+
+## Related Hooks
+
+- [usePortfolio](/api/hooks/use-portfolio) - Fetch wallet portfolio data
+- [useAIAdvisor](/api/hooks/use-ai-advisor) - Generate AI strategies
+- [useProtocols](/api/hooks/use-protocols) - Browse DeFi protocols
+
+## Related Services
+
+- [Authentication](/api/authentication) - Stacks Connect authentication details
+- [Stacks API](/api/stacks-api) - Blockchain data fetching

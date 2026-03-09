@@ -1,0 +1,515 @@
+---
+title: Wallet Setup
+description: Complete guide to installing and connecting Leather or Xverse wallet to Staxiq
+---
+
+# Wallet Setup Guide
+
+To use Staxiq with your real Bitcoin DeFi portfolio, you need a Stacks-compatible wallet. This guide covers installation, connection, and security best practices for both **Leather** and **Xverse** wallets.
+
+<Warning>
+  **Security First**: Never share your seed phrase with anyone. Staxiq will never ask for your seed phrase or private keys. All transactions are signed locally in your wallet.
+</Warning>
+
+---
+
+## Supported Wallets
+
+<CardGroup cols={2}>
+  <Card title="Leather Wallet" icon="wallet" href="https://leather.io">
+    **Best for**: Desktop users, developers
+    
+    **Features**:
+    - Native Stacks and Bitcoin support
+    - Open source
+    - Hardware wallet integration
+    - Advanced transaction controls
+  </Card>
+  
+  <Card title="Xverse Wallet" icon="mobile" href="https://www.xverse.app">
+    **Best for**: Mobile users, beginners
+    
+    **Features**:
+    - Excellent mobile experience
+    - Built-in sBTC bridge
+    - NFT gallery
+    - Simple, clean interface
+  </Card>
+</CardGroup>
+
+---
+
+## Installing Leather Wallet
+
+<Steps>
+  <Step title="Download the Extension">
+    Visit [leather.io](https://leather.io) and click **"Download"**.
+    
+    Choose your browser:
+    - Chrome / Brave / Edge: Install from Chrome Web Store
+    - Firefox: Install from Firefox Add-ons
+    
+    Click **"Add to Chrome"** (or your browser) and confirm the installation.
+  </Step>
+  
+  <Step title="Create New Wallet">
+    After installation, the Leather extension will open automatically.
+    
+    Click **"Create new wallet"** or **"I'm new"**.
+    
+    <Note>
+      If you already have a Stacks wallet, click **"I have a wallet"** and enter your 12 or 24-word seed phrase to restore.
+    </Note>
+  </Step>
+  
+  <Step title="Save Your Secret Key">
+    Leather will generate a **24-word seed phrase** (also called a secret recovery phrase).
+    
+    **Critical Security Steps**:
+    
+    1. ✅ Write down all 24 words on paper in the correct order
+    2. ✅ Store the paper in a secure location (safe, safety deposit box)
+    3. ✅ Never take a screenshot or store digitally
+    4. ✅ Never share with anyone, including "support" staff
+    5. ✅ Verify you wrote it correctly by re-entering words when prompted
+    
+    <Warning>
+      **This seed phrase is your ONLY way to recover your wallet.** If you lose it and your device breaks, your funds are **permanently lost**. There is no "reset password" option.
+    </Warning>
+  </Step>
+  
+  <Step title="Set a Password">
+    Create a strong password to encrypt your wallet on this device.
+    
+    This password:
+    - Unlocks Leather on your current device only
+    - Should be unique (not used elsewhere)
+    - Can be reset using your 24-word seed phrase
+    - Is required every time you open Leather
+  </Step>
+  
+  <Step title="Choose Network">
+    Select **Testnet** or **Mainnet**:
+    
+    - **Testnet**: For testing with fake STX (recommended for first-time users)
+    - **Mainnet**: For real funds and production use
+    
+    <Note>
+      Staxiq automatically detects your wallet's network and adjusts accordingly. Make sure your wallet network matches the network you intend to use.
+    </Note>
+  </Step>
+  
+  <Step title="Get Your Wallet Address">
+    Click on your wallet in Leather to view your **Stacks address**.
+    
+    It looks like: `SP2X4Y8...` (mainnet) or `ST2X4Y8...` (testnet)
+    
+    This is your public address for receiving STX and sBTC - safe to share.
+  </Step>
+</Steps>
+
+---
+
+## Installing Xverse Wallet
+
+<Steps>
+  <Step title="Download Xverse">
+    **For Mobile (iOS/Android)**:
+    - Visit [xverse.app](https://www.xverse.app) on your phone
+    - Download from App Store or Google Play
+    - Install and open the app
+    
+    **For Desktop (Browser Extension)**:
+    - Visit [xverse.app](https://www.xverse.app) on desktop
+    - Click "Download for Chrome"
+    - Install from Chrome Web Store
+  </Step>
+  
+  <Step title="Create Wallet">
+    Open Xverse and tap **"Create new wallet"**.
+    
+    Accept the terms of service and privacy policy.
+  </Step>
+  
+  <Step title="Backup Your Seed Phrase">
+    Xverse will show you a **12-word seed phrase**.
+    
+    **Security Checklist**:
+    
+    - ✅ Write all 12 words on paper in order
+    - ✅ Store securely offline
+    - ✅ Never screenshot or save digitally
+    - ✅ Confirm backup by selecting words in correct order
+    
+    <Warning>
+      Losing your seed phrase means losing access to your funds forever. No one can recover it for you - not Xverse, not Staxiq, not anyone.
+    </Warning>
+  </Step>
+  
+  <Step title="Set Up Security">
+    **For Mobile**: Enable biometric unlock (Face ID / Fingerprint)
+    
+    **For Desktop**: Create a password to protect the extension
+    
+    This adds an extra layer of security when accessing your wallet.
+  </Step>
+  
+  <Step title="Select Network">
+    In Xverse settings:
+    
+    1. Tap the profile icon
+    2. Go to **"Network"**
+    3. Choose **"Mainnet"** or **"Testnet"**
+    
+    For first-time users, start with **Testnet** to practice without risking real funds.
+  </Step>
+  
+  <Step title="Copy Your Address">
+    On the home screen, tap your Stacks address to copy it.
+    
+    Example: `SP3FGQ8...` (mainnet) or `ST3FGQ8...` (testnet)
+    
+    Use this address to receive STX, sBTC, and other Stacks tokens.
+  </Step>
+</Steps>
+
+---
+
+## Connecting Wallet to Staxiq
+
+Once your wallet is set up, connecting to Staxiq is seamless.
+
+<Steps>
+  <Step title="Open Staxiq">
+    Navigate to Staxiq in your web browser (desktop for Leather, mobile browser or desktop for Xverse).
+  </Step>
+  
+  <Step title="Click 'Connect Wallet'">
+    In the top-right navbar, click the **"Connect Wallet"** button.
+    
+    This triggers the authentication flow using Stacks Connect protocol.
+  </Step>
+  
+  <Step title="Approve in Wallet">
+    Your wallet will prompt you to approve the connection.
+    
+    **Permission Request Details**:
+    
+    ```
+    App Name: Staxiq
+    Permissions Requested:
+    - store_write: Save session data
+    - publish_data: Interact with smart contracts
+    ```
+    
+    <Note>
+      These permissions allow Staxiq to read your public wallet data and prepare transactions for you to sign. They do **NOT** give Staxiq access to your private keys or ability to move funds without your explicit approval.
+    </Note>
+    
+    Click **"Approve"** or **"Connect"** in your wallet popup.
+  </Step>
+  
+  <Step title="Connection Confirmed">
+    Once approved, Staxiq will:
+    
+    1. Display your shortened address in the navbar (e.g., `SP2X4...3K4J`)
+    2. Fetch your STX and sBTC balances
+    3. Load your transaction history
+    4. Detect active protocol positions (StackingDAO, Zest, ALEX, etc.)
+    
+    You'll see a success indicator and your live portfolio dashboard.
+  </Step>
+</Steps>
+
+### Connection Code Example
+
+Here's how Staxiq implements wallet connection using `@stacks/connect`:
+
+```javascript
+// src/hooks/useWallet.js:31-60
+import { authenticate, AppConfig, UserSession } from '@stacks/connect';
+
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+const userSession = new UserSession({ appConfig });
+
+function connectWallet() {
+  setLoading(true);
+
+  authenticate({
+    userSession,
+    appDetails: {
+      name: 'Staxiq',
+      icon: window.location.origin + '/favicon.ico',
+    },
+    onFinish: (payload) => {
+      const userData = payload.userSession.loadUserData();
+      const addr = network === 'testnet'
+        ? userData?.profile?.stxAddress?.testnet
+        : userData?.profile?.stxAddress?.mainnet;
+
+      if (addr) {
+        setAddress(addr);
+        setConnected(true);
+      }
+      setLoading(false);
+    },
+    onCancel: () => {
+      setLoading(false);
+    },
+  });
+}
+```
+
+Key points:
+
+- Uses `authenticate()` from `@stacks/connect`
+- Requests minimal permissions (`store_write`, `publish_data`)
+- Handles both mainnet and testnet addresses
+- Provides loading states and cancel handling
+
+---
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Seed Phrase Security" icon="key">
+    - Never share with anyone
+    - Store offline only (paper, metal backup)
+    - Never enter into websites or apps
+    - Verify website URL before connecting wallet
+  </Card>
+  
+  <Card title="Transaction Verification" icon="shield-check">
+    - Always review transaction details in wallet before signing
+    - Verify contract addresses match official protocol addresses
+    - Check amounts and fees carefully
+    - Never sign suspicious transactions
+  </Card>
+  
+  <Card title="Phishing Protection" icon="bug">
+    - Bookmark the official Staxiq URL
+    - Check for HTTPS and correct domain
+    - Be wary of DMs offering "support"
+    - Never enter seed phrase to "validate" wallet
+  </Card>
+  
+  <Card title="Device Security" icon="lock">
+    - Use strong wallet password
+    - Enable biometric unlock on mobile
+    - Keep browser extensions updated
+    - Use antivirus software
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Common Scams to Avoid**:
+  
+  ❌ "Support" asking for your seed phrase
+  
+  ❌ Websites claiming you won a prize and need to "validate" your wallet
+  
+  ❌ Fake token airdrops requiring approval signatures
+  
+  ❌ Phishing sites with similar URLs (staxlq.com vs staxiq.com)
+</Warning>
+
+---
+
+## Switching Networks
+
+Staxiq supports both Mainnet and Testnet. Here's how to switch:
+
+### In Your Wallet
+
+**Leather**:
+1. Click the Leather extension icon
+2. Click settings (gear icon)
+3. Select "Network"
+4. Choose Mainnet or Testnet
+5. Refresh Staxiq page
+
+**Xverse**:
+1. Open Xverse app or extension
+2. Tap profile icon
+3. Go to "Network"
+4. Select Mainnet or Testnet
+5. Refresh Staxiq page
+
+<Note>
+  Staxiq automatically detects your wallet's network and displays the corresponding address and balances. You don't need to change anything in Staxiq itself.
+</Note>
+
+---
+
+## Disconnecting Your Wallet
+
+To disconnect your wallet from Staxiq:
+
+<Steps>
+  <Step title="Click Your Address">
+    In the Staxiq navbar, click on your shortened wallet address (e.g., `SP2X4...3K4J`).
+    
+    A dropdown menu will appear.
+  </Step>
+  
+  <Step title="Select 'Disconnect'">
+    Click **"Disconnect Wallet"** in the dropdown.
+    
+    This removes the session and clears your data from Staxiq.
+  </Step>
+  
+  <Step title="Confirm Disconnection">
+    Your wallet is now disconnected. The page will refresh and show the landing hero section.
+    
+    To reconnect, click "Connect Wallet" again and approve in your wallet.
+  </Step>
+</Steps>
+
+Disconnecting is implemented using the `signUserOut()` method:
+
+```javascript
+// src/hooks/useWallet.js:62-71
+function disconnectWallet() {
+  try {
+    userSession.signUserOut();
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+  setConnected(false);
+  setAddress(null);
+  window.location.reload();
+}
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Wallet popup doesn't appear when clicking 'Connect Wallet'">
+    **Solutions**:
+    
+    1. Ensure your wallet extension is installed and enabled
+    2. Check if the wallet is unlocked (enter your password)
+    3. Try refreshing the Staxiq page
+    4. Disable ad blockers temporarily (they sometimes block wallet popups)
+    5. Check browser console for errors (F12 → Console tab)
+    
+    **For Brave Browser Users**: Brave's aggressive privacy settings can block wallet popups. Go to `brave://settings/shields` and allow popups for Staxiq's domain.
+  </Accordion>
+  
+  <Accordion title="Wrong address showing in Staxiq">
+    **Cause**: Your wallet is connected to a different network than expected.
+    
+    **Solution**:
+    
+    1. Check if you're on Mainnet or Testnet in your wallet
+    2. Testnet addresses start with `ST...`
+    3. Mainnet addresses start with `SP...`
+    4. Switch networks in your wallet and refresh Staxiq
+  </Accordion>
+  
+  <Accordion title="Transaction fails or gets stuck">
+    **Common Reasons**:
+    
+    - Insufficient STX for transaction fees
+    - Network congestion on Stacks blockchain
+    - Incorrect nonce (transaction order)
+    
+    **Solutions**:
+    
+    1. Ensure you have at least 0.5 STX for fees
+    2. Wait 10-15 minutes and try again
+    3. Check transaction status on [Stacks Explorer](https://explorer.hiro.so)
+    4. Try increasing the fee in wallet settings (advanced)
+  </Accordion>
+  
+  <Accordion title="'Store write' permission denied error">
+    **Solution**: This happens when you deny the permission request.
+    
+    1. Disconnect wallet from Staxiq
+    2. Click "Connect Wallet" again
+    3. Approve all requested permissions
+    4. These permissions are necessary for Staxiq to function
+  </Accordion>
+  
+  <Accordion title="Balance shows 0 but I have funds">
+    **Solutions**:
+    
+    1. Verify you're on the correct network (mainnet vs testnet)
+    2. Check your balance directly in your wallet - if it's correct there, Staxiq's API may be delayed
+    3. Wait 30-60 seconds and refresh the page
+    4. Check [Stacks Status](https://status.hiro.so) for API outages
+    5. Try disconnecting and reconnecting your wallet
+  </Accordion>
+  
+  <Accordion title="Can't install Leather/Xverse extension">
+    **For Leather**:
+    - Ensure you're using a supported browser (Chrome, Brave, Firefox, Edge)
+    - Check if you have enough disk space
+    - Try installing from the direct Chrome Web Store link
+    
+    **For Xverse**:
+    - Check your device meets minimum requirements
+    - Ensure you have the latest OS version
+    - Try uninstalling and reinstalling
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Hardware Wallet Integration
+
+For maximum security, you can use a hardware wallet with Leather:
+
+<Steps>
+  <Step title="Supported Devices">
+    Leather supports:
+    - Ledger Nano S / S Plus / X
+    
+    Ensure your Ledger has the **Stacks app** installed via Ledger Live.
+  </Step>
+  
+  <Step title="Connect Hardware Wallet">
+    1. Open Leather extension
+    2. Click "Add account"
+    3. Select "Connect hardware wallet"
+    4. Plug in your Ledger and unlock it
+    5. Open the Stacks app on your Ledger
+    6. Approve the connection
+  </Step>
+  
+  <Step title="Use with Staxiq">
+    Once connected in Leather, connect to Staxiq normally.
+    
+    All transactions will require physical confirmation on your Ledger device - providing maximum security.
+  </Step>
+</Steps>
+
+<Note>
+  Hardware wallet support in Xverse is coming soon. Currently only available in Leather.
+</Note>
+
+---
+
+## Next Steps
+
+Now that your wallet is connected:
+
+<CardGroup cols={2}>
+  <Card title="Explore Your Dashboard" icon="chart-line" href="/quickstart">
+    Learn how to navigate your portfolio, view protocol positions, and understand the AI copilot recommendations.
+  </Card>
+  
+  <Card title="Using the Yield Calculator" icon="calculator" href="/features/yield-calculator">
+    Simulate compound returns across different Stacks DeFi protocols and optimize your earnings.
+  </Card>
+  
+  <Card title="Understanding Stacking" icon="layer-group" href="/features/stacking-tracker">
+    Learn how to stack STX to earn BTC rewards and track your stacking cycles.
+  </Card>
+  
+  <Card title="API Integration" icon="code" href="/api-reference">
+    Build your own integrations using Staxiq's wallet connection patterns.
+  </Card>
+</CardGroup>

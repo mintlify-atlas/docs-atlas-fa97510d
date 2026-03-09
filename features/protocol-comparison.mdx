@@ -1,0 +1,393 @@
+---
+title: 'Protocol Comparison'
+description: 'Side-by-side comparison of all Stacks DeFi protocols with live APY, TVL, and risk data from DefiLlama'
+icon: 'chart-bar'
+---
+
+## Overview
+
+Protocol Comparison provides a comprehensive, sortable table of every major Stacks DeFi protocol. Compare yields, TVL, risk levels, and audit status across lending platforms, DEXs, yield aggregators, and stacking protocols—all with live data from DefiLlama updated every 5 minutes.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Live Data Feeds" icon="signal">
+    APY and TVL from DefiLlama refresh every 5 minutes
+  </Card>
+  <Card title="Multi-Dimensional Sorting" icon="arrow-down-wide-short">
+    Sort by APY, TVL, risk, protocol name, or any column
+  </Card>
+  <Card title="Advanced Filtering" icon="filter">
+    Filter by risk level (Low/Medium/High) and protocol type
+  </Card>
+  <Card title="Audit Status" icon="badge-check">
+    See which protocols have been security audited
+  </Card>
+</CardGroup>
+
+## Protocol Table
+
+### Columns Explained
+
+| Column | Description | Format | Sortable |
+|--------|-------------|--------|----------|
+| **Protocol** | Name with logo | Text + Image | Yes |
+| **APY** | Annual Percentage Yield | `12.5%` | Yes |
+| **TVL** | Total Value Locked | `$45.2M` | Yes |
+| **Risk** | Safety rating | Badge (Low/Med/High) | Yes |
+| **Type** | Protocol category | Lending/DEX/Yield/Stacking | No |
+| **Asset** | Accepted tokens | `STX`, `sBTC`, `xBTC` | No |
+| **Audited** | Security audit status | ✓ or ✗ | No |
+| **Min Dep.** | Minimum deposit required | `None`, `100 STX` | No |
+
+### Row Interactions
+
+<Info>
+  **Click any row** to open the protocol's website in a new tab. Hover effects highlight the entire row for easy selection.
+</Info>
+
+```javascript
+// Row click handler
+onClick={() => window.open(protocol.url, '_blank')}
+```
+
+## Sorting & Filtering
+
+### Sorting Logic
+
+<Steps>
+  <Step title="Click Column Header">
+    Click any column with a sort icon (↕) to sort by that field
+  </Step>
+  
+  <Step title="Toggle Direction">
+    - First click: Sort **descending** (highest first)
+    - Second click: Sort **ascending** (lowest first)
+    - Visual indicator: ↓ (desc) or ↑ (asc) in orange
+  </Step>
+  
+  <Step title="Multi-Column Comparison">
+    Sort by APY to find highest yields, then filter by Low risk to see safest high-yield options
+  </Step>
+</Steps>
+
+**Default sort:** APY descending (highest yields first)
+
+### Risk Filtering
+
+Filter by risk tolerance:
+
+<Tabs>
+  <Tab title="Low Risk">
+    **Characteristics:**
+    - Audited smart contracts
+    - Established protocols (StackingDAO, ALEX)
+    - TVL > $10M
+    - APY: 5-10%
+    
+    **Best for:** Conservative investors, beginners, large positions
+  </Tab>
+  
+  <Tab title="Medium Risk">
+    **Characteristics:**
+    - Some audit coverage
+    - Growing protocols (Velar, Zest)
+    - TVL: $1M-$10M
+    - APY: 10-15%
+    
+    **Best for:** Balanced portfolios, experienced users
+  </Tab>
+  
+  <Tab title="High Risk">
+    **Characteristics:**
+    - New or unaudited
+    - Experimental features
+    - TVL < $1M
+    - APY: 15%+
+    
+    **Best for:** Risk-tolerant, small allocation, experienced DeFi users
+  </Tab>
+</Tabs>
+
+### Type Filtering
+
+Filter by protocol category:
+
+- **Lending** - Lend assets to earn interest (e.g., Zest Protocol)
+- **DEX** - Decentralized exchanges with LP rewards (e.g., Velar)
+- **Yield** - Yield aggregators and vaults (e.g., ALEX)
+- **Stacking** - STX stacking services (e.g., StackingDAO)
+
+<Tip>
+  **Strategy:** Filter by "Stacking" + "Low Risk" to find safest native yield options. Then compare with "Lending" + "Medium Risk" for higher yields.
+</Tip>
+
+## Data Sources
+
+### DefiLlama Integration
+
+Live data fetched from DefiLlama API:
+
+```javascript
+import { fetchAllProtocolData } from '../services/defiLlamaService';
+
+const { protocols, loading, lastUpdated } = useProtocolData();
+
+// Auto-refreshes every 5 minutes
+useEffect(() => {
+  const interval = setInterval(load, 5 * 60 * 1000);
+  return () => clearInterval(interval);
+}, []);
+```
+
+### Data Structure
+
+```javascript
+const protocol = {
+  id: 'stackingdao',
+  name: 'StackingDAO',
+  logo: 'https://...',
+  url: 'https://stackingdao.com',
+  type: 'Stacking',
+  asset: 'STX',
+  risk: 'Low',
+  audited: true,
+  minDeposit: 'None',
+  
+  // Live data from DefiLlama
+  apy: 9.5,              // Current APY
+  apyDisplay: '9.5%',    // Formatted string
+  tvl: '$45.2M',         // Formatted TVL
+  tvlRaw: 45200000,      // Raw number for sorting
+  
+  // Metadata
+  color: '#F7931A',      // Brand color
+  apySource: 'defillama' // 'defillama' or 'fallback'
+};
+```
+
+### Fallback Data
+
+<Note>
+  If DefiLlama doesn't have current APY for a protocol, Staxiq uses the protocol's last published rate marked with a `~` symbol.
+</Note>
+
+Example: `~9.5%` indicates fallback data
+
+## Summary Statistics
+
+Four key metrics displayed below the table:
+
+```
+┌────────────────┬────────────────┬────────────────┬────────────────┐
+│ Highest APY    │ Largest TVL    │ Protocols      │ Audited        │
+│ 15.2%          │ $45.2M         │ 12             │ 8/12           │
+│ Zest Protocol  │ StackingDAO    │ On Stacks      │ Protocols      │
+└────────────────┴────────────────┴────────────────┴────────────────┘
+```
+
+### Calculations
+
+```javascript
+// Highest APY
+const topApy = protocols
+  .filter(p => p.apy)
+  .reduce((a, b) => a.apy > b.apy ? a : b);
+
+// Largest TVL
+const topTvl = protocols
+  .filter(p => p.tvlRaw)
+  .reduce((a, b) => (a.tvlRaw ?? 0) > (b.tvlRaw ?? 0) ? a : b, {});
+
+// Audit count
+const audited = protocols.filter(p => p.audited).length;
+```
+
+## Use Cases
+
+### 1. Finding Best Yield
+
+<Steps>
+  <Step title="Sort by APY">
+    Click **APY** column header to sort descending
+  </Step>
+  <Step title="Filter by Risk">
+    Select your risk tolerance (start with "Low" or "Medium")
+  </Step>
+  <Step title="Check Audit Status">
+    Look for ✓ in Audited column
+  </Step>
+  <Step title="Compare TVL">
+    Higher TVL = more liquidity and battle-tested contracts
+  </Step>
+  <Step title="Verify Minimum">
+    Check Min Deposit to ensure you meet requirements
+  </Step>
+</Steps>
+
+**Example result:** Velar Finance (12% APY, Medium Risk, Audited, $8.5M TVL, No minimum)
+
+### 2. Diversifying Portfolio
+
+<Steps>
+  <Step title="Filter by Type">
+    Select "All" to see all protocol types
+  </Step>
+  <Step title="Pick 3-4 Protocols">
+    Choose different types:
+    - 1x Stacking (Low risk base)
+    - 1x Lending (Medium risk)
+    - 1x DEX (Medium/High for growth)
+    - 1x Yield (Optimization)
+  </Step>
+  <Step title="Use Yield Calculator">
+    Model returns for each protocol with your planned allocation
+  </Step>
+  <Step title="Verify Assets">
+    Ensure you have the required assets (STX, sBTC, xBTC)
+  </Step>
+</Steps>
+
+### 3. Risk Assessment
+
+<Steps>
+  <Step title="Sort by Risk">
+    Click **Risk** column to group by risk level
+  </Step>
+  <Step title="Compare Within Tier">
+    Within "Medium Risk" group, sort by APY or TVL
+  </Step>
+  <Step title="Check Audit Status">
+    Audited protocols reduce smart contract risk
+  </Step>
+  <Step title="Research TVL">
+    TVL > $5M indicates strong community trust
+  </Step>
+</Steps>
+
+## Code Reference
+
+Key implementation files:
+- **Page:** `src/pages/CompareProtocols.jsx` - Main table UI
+- **Hook:** `src/hooks/useProtocolData.js` - Data fetching and caching
+- **Service:** `src/services/defiLlamaService.js` - DefiLlama API integration
+- **Sorting:** `src/pages/CompareProtocols.jsx:60-73` - Multi-column sort logic
+
+## Advanced Features
+
+### Responsive Table
+
+Table adapts to screen size:
+
+```javascript
+<div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+  <div style={{ minWidth: '700px' }}>
+    {/* Table content */}
+  </div>
+</div>
+```
+
+- **Mobile:** Horizontal scroll enabled
+- **Tablet+:** Full table fits viewport
+- **Desktop:** Expanded columns with more padding
+
+### Loading States
+
+While fetching live data:
+- APY shows `…` spinner
+- TVL shows `…` spinner
+- Filter area displays: `⏳ Fetching live data…`
+- Existing data remains visible during refresh
+
+### Hover Effects
+
+```javascript
+onMouseEnter={e => e.currentTarget.style.background = hoverColor}
+onMouseLeave={e => e.currentTarget.style.background = originalColor}
+```
+
+- Row background lightens on hover
+- Cursor changes to pointer
+- Entire row is clickable
+- Visual feedback confirms interactivity
+
+## Protocol Logos
+
+Logos fallback to initials if image fails:
+
+```javascript
+function ProtocolLogo({ logo, name, color }) {
+  const [err, setErr] = useState(false);
+  
+  if (err) {
+    return (
+      <div style={{ background: `${color}33`, color }}>
+        {name[0]} {/* First letter */}
+      </div>
+    );
+  }
+  
+  return (
+    <img 
+      src={logo} 
+      onError={() => setErr(true)} 
+    />
+  );
+}
+```
+
+## Troubleshooting
+
+**APY shows "—" for all protocols:**
+- DefiLlama API may be down—check status at defillama.com
+- Network connection issue—refresh page
+- Some protocols don't report APY to aggregators
+
+**Table not sorting correctly:**
+- Click column header again to toggle direction
+- Check if filter is applied—may be hiding some rows
+- APY/TVL sort uses raw numbers, not formatted strings
+
+**Protocol link doesn't work:**
+- Some protocols use testnet URLs during development
+- Check browser's pop-up blocker settings
+- Try right-click → "Open in new tab"
+
+**Data seems outdated:**
+- Data refreshes every 5 minutes automatically
+- Check "🟢 Live · [time]" badge for last update
+- Hard refresh page (Ctrl+Shift+R) to force update
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Compare Before Investing" icon="magnifying-glass-chart">
+    Spend 5-10 minutes comparing protocols before committing funds
+  </Card>
+  <Card title="Diversify by Risk" icon="shield-halved">
+    Mix Low/Medium/High risk protocols—don't chase highest APY only
+  </Card>
+  <Card title="Verify Externally" icon="arrow-up-right-from-square">
+    Click protocol links to verify audit reports and documentation
+  </Card>
+  <Card title="Monitor TVL Trends" icon="chart-line-up">
+    Growing TVL indicates healthy protocol—check monthly
+  </Card>
+</CardGroup>
+
+## DefiLlama Attribution
+
+<Info>
+  Data sourced from [DefiLlama](https://defillama.com/chain/Stacks) - The leading DeFi data aggregator. TVL and APY update hourly on DefiLlama's backend.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Yield Calculator" icon="calculator" href="/features/yield-calculator">
+    Model returns for protocols you're interested in
+  </Card>
+  <Card title="AI Copilot" icon="robot" href="/features/ai-copilot">
+    Get AI-powered allocation strategy across protocols
+  </Card>
+</CardGroup>

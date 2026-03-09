@@ -1,0 +1,491 @@
+---
+title: 'Contract Service'
+description: 'Interact with Stacks smart contracts for on-chain data storage'
+icon: 'file-contract'
+---
+
+## Overview
+
+The Contract Service provides functions to interact with the Staxiq smart contract on the Stacks blockchain. It handles user profiles, risk preferences, and strategy anchoring with automatic network detection.
+
+**Source:** `src/services/contractService.js`
+
+**Contract Address:** `ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ`  
+**Contract Name:** `staxiq-user-profile`
+
+## Functions
+
+### saveRiskProfile
+
+Save a user's risk profile preference on-chain.
+
+```javascript
+async function saveRiskProfile(riskLevel: string): Promise<string | null>
+```
+
+<ParamField path="riskLevel" type="string" required>
+  Risk profile level: `"Conservative"`, `"Balanced"`, or `"Aggressive"`
+</ParamField>
+
+<ResponseField name="txid" type="string | null">
+  Transaction ID if successful, `null` if failed (fails gracefully without throwing)
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+```javascript Basic Usage
+import { saveRiskProfile } from './services/contractService';
+
+// Save user's risk preference
+const txid = await saveRiskProfile('Balanced');
+
+if (txid) {
+  console.log('Risk profile saved:', txid);
+  console.log('View on explorer:', `https://explorer.hiro.so/txid/${txid}`);
+} else {
+  console.log('Failed to save risk profile');
+}
+```
+
+```jsx React Component
+import { useState } from 'react';
+import { saveRiskProfile } from './services/contractService';
+
+function RiskProfileSelector() {
+  const [selected, setSelected] = useState('Balanced');
+  const [saving, setSaving] = useState(false);
+  const [txid, setTxid] = useState(null);
+
+  async function handleSave() {
+    setSaving(true);
+    const result = await saveRiskProfile(selected);
+    setTxid(result);
+    setSaving(false);
+  }
+
+  return (
+    <div>
+      <select value={selected} onChange={e => setSelected(e.target.value)}>
+        <option value="Conservative">Conservative</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Aggressive">Aggressive</option>
+      </select>
+      
+      <button onClick={handleSave} disabled={saving}>
+        {saving ? 'Saving...' : 'Save to Chain'}
+      </button>
+      
+      {txid && <p>Saved! Transaction: {txid}</p>}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+#### Implementation Details
+
+Risk levels are mapped to integers for on-chain storage:
+
+```javascript
+const riskMap = { 
+  Conservative: 1, 
+  Balanced: 2, 
+  Aggressive: 3 
+};
+```
+
+---
+
+### getUserProfile
+
+Fetch a user's complete on-chain profile.
+
+```javascript
+async function getUserProfile(address: string): Promise<object | null>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address (mainnet or testnet)
+</ParamField>
+
+<ResponseField name="profile" type="object | null">
+  User profile data from blockchain, or `null` if not found
+  
+  <ResponseField name="riskProfile" type="number">
+    Risk level (1=Conservative, 2=Balanced, 3=Aggressive)
+  </ResponseField>
+  
+  <ResponseField name="strategyCount" type="number">
+    Total strategies anchored by this user
+  </ResponseField>
+  
+  <ResponseField name="lastUpdated" type="number">
+    Block height of last profile update
+  </ResponseField>
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getUserProfile } from './services/contractService';
+
+const profile = await getUserProfile('SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5');
+
+if (profile) {
+  console.log('Risk Profile:', profile.riskProfile);
+  console.log('Strategies:', profile.strategyCount);
+} else {
+  console.log('User has no profile yet');
+}
+```
+
+---
+
+### checkHasProfile
+
+Check if a user has created an on-chain profile.
+
+```javascript
+async function checkHasProfile(address: string): Promise<boolean>
+```
+
+<ParamField path="address" type="string" required>
+  Stacks wallet address to check
+</ParamField>
+
+<ResponseField name="hasProfile" type="boolean">
+  `true` if user has a profile, `false` otherwise
+</ResponseField>
+
+#### Example
+
+```javascript
+import { checkHasProfile } from './services/contractService';
+
+const hasProfile = await checkHasProfile(address);
+
+if (!hasProfile) {
+  // Show onboarding flow
+  console.log('New user - show onboarding');
+} else {
+  // Load existing profile
+  console.log('Returning user');
+}
+```
+
+---
+
+### anchorStrategy
+
+Save a generated strategy to the blockchain for permanent record.
+
+```javascript
+async function anchorStrategy(
+  strategyHash: string, 
+  protocol: string
+): Promise<string | null>
+```
+
+<ParamField path="strategyHash" type="string" required>
+  Hash or identifier of the strategy (max 64 characters). Typically a SHA-256 hash of the strategy content.
+</ParamField>
+
+<ParamField path="protocol" type="string" required>
+  Primary protocol name for this strategy (max 32 characters)
+</ParamField>
+
+<ResponseField name="txid" type="string | null">
+  Transaction ID if successful, `null` if failed
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+```javascript Basic Usage
+import { anchorStrategy } from './services/contractService';
+
+// Hash the strategy content
+const strategyContent = "Invest 60% in Zest Protocol...";
+const hash = await crypto.subtle.digest(
+  'SHA-256', 
+  new TextEncoder().encode(strategyContent)
+);
+const strategyHash = Array.from(new Uint8Array(hash))
+  .map(b => b.toString(16).padStart(2, '0'))
+  .join('');
+
+// Anchor to blockchain
+const txid = await anchorStrategy(strategyHash, 'Zest Protocol');
+
+if (txid) {
+  console.log('Strategy anchored on-chain:', txid);
+}
+```
+
+```jsx React Component
+import { anchorStrategy } from './services/contractService';
+
+function StrategyAnchoring({ strategy, protocol }) {
+  const [anchoring, setAnchoring] = useState(false);
+  const [txid, setTxid] = useState(null);
+
+  async function handleAnchor() {
+    setAnchoring(true);
+    
+    // Simple hash for demo (use proper hashing in production)
+    const hash = btoa(strategy).slice(0, 64);
+    
+    const result = await anchorStrategy(hash, protocol);
+    setTxid(result);
+    setAnchoring(false);
+  }
+
+  return (
+    <div>
+      <button onClick={handleAnchor} disabled={anchoring}>
+        {anchoring ? 'Anchoring...' : 'Anchor Strategy to Chain'}
+      </button>
+      
+      {txid && (
+        <div>
+          <p>Strategy saved on blockchain!</p>
+          <a href={`https://explorer.hiro.so/txid/${txid}`} target="_blank">
+            View Transaction
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+<Warning>
+  Strategy hashes are truncated to 64 characters and protocol names to 32 characters to fit on-chain constraints.
+</Warning>
+
+---
+
+### getStrategyCount
+
+Get the total number of strategies anchored by a user.
+
+```javascript
+async function getStrategyCount(address: string): Promise<number>
+```
+
+<ParamField path="address" type="string" required>
+  User's Stacks wallet address
+</ParamField>
+
+<ResponseField name="count" type="number">
+  Number of strategies saved on-chain (returns 0 if none or error)
+</ResponseField>
+
+#### Example
+
+```javascript
+import { getStrategyCount } from './services/contractService';
+
+const count = await getStrategyCount(address);
+
+if (count === 0) {
+  console.log('No strategies yet - new user');
+} else if (count > 10) {
+  console.log('Power user with', count, 'strategies');
+}
+```
+
+---
+
+## Network Detection
+
+All functions automatically detect the appropriate network:
+
+```javascript
+function getNetwork() {
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1'
+    ? STACKS_TESTNET
+    : STACKS_MAINNET;
+}
+```
+
+<Tabs>
+  <Tab title="Testnet">
+    Used when:
+    - Running on `localhost`
+    - Running on `127.0.0.1`
+    - Development environment
+    
+    **Network:** Stacks Testnet  
+    **Explorer:** https://explorer.hiro.so?chain=testnet
+  </Tab>
+  
+  <Tab title="Mainnet">
+    Used when:
+    - Deployed to production
+    - Running on any other hostname
+    
+    **Network:** Stacks Mainnet  
+    **Explorer:** https://explorer.hiro.so
+  </Tab>
+</Tabs>
+
+## Transaction Configuration
+
+All write operations use these defaults:
+
+<ParamField path="anchorMode" type="AnchorMode">
+  Set to `AnchorMode.Any` - transaction can be included in microblock or anchor block
+</ParamField>
+
+<ParamField path="postConditionMode" type="PostConditionMode">
+  Set to `PostConditionMode.Allow` - allows transactions without explicit post-conditions
+</ParamField>
+
+```javascript
+const txOptions = {
+  contractAddress: CONTRACT_ADDRESS,
+  contractName: CONTRACT_NAME,
+  functionName: 'set-risk-profile',
+  functionArgs: [uintCV(level)],
+  network: getNetwork(),
+  anchorMode: AnchorMode.Any,
+  postConditionMode: PostConditionMode.Allow,
+};
+```
+
+## Error Handling
+
+All functions handle errors gracefully:
+
+- **Write functions** (`saveRiskProfile`, `anchorStrategy`) return `null` on error
+- **Read functions** (`getUserProfile`, `checkHasProfile`) return safe defaults
+- **Count functions** (`getStrategyCount`) return `0` on error
+- Errors are logged to console with warnings
+
+```javascript
+try {
+  const result = await fetchCallReadOnlyFunction({...});
+  return cvToJSON(result);
+} catch (err) {
+  console.warn('Get profile failed:', err);
+  return null;
+}
+```
+
+<Note>
+  No exceptions are thrown - all errors result in safe fallback values.
+</Note>
+
+## Complete Example
+
+```javascript
+import {
+  saveRiskProfile,
+  getUserProfile,
+  checkHasProfile,
+  anchorStrategy,
+  getStrategyCount,
+} from './services/contractService';
+
+async function handleNewUser(address) {
+  // Check if user exists
+  const hasProfile = await checkHasProfile(address);
+  
+  if (!hasProfile) {
+    // Create new profile
+    console.log('New user - creating profile');
+    const txid = await saveRiskProfile('Balanced');
+    console.log('Profile created:', txid);
+  } else {
+    // Load existing profile
+    const profile = await getUserProfile(address);
+    const strategyCount = await getStrategyCount(address);
+    
+    console.log('Returning user');
+    console.log('Risk level:', profile.riskProfile);
+    console.log('Total strategies:', strategyCount);
+  }
+}
+
+async function handleStrategyCreation(strategyText, primaryProtocol) {
+  // Generate hash
+  const encoder = new TextEncoder();
+  const data = encoder.encode(strategyText);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Save to blockchain
+  const txid = await anchorStrategy(hashHex, primaryProtocol);
+  
+  if (txid) {
+    console.log('Strategy anchored successfully');
+    return {
+      success: true,
+      txid,
+      explorerUrl: `https://explorer.hiro.so/txid/${txid}`,
+    };
+  }
+  
+  return { success: false };
+}
+```
+
+## Dependencies
+
+Required packages:
+
+```json
+{
+  "@stacks/transactions": "^6.x",
+  "@stacks/blockchain-api-client": "^7.x",
+  "@stacks/network": "^6.x"
+}
+```
+
+Imports:
+
+```javascript
+import {
+  makeContractCall,
+  stringAsciiCV,
+  uintCV,
+  AnchorMode,
+  PostConditionMode,
+  broadcastTransaction,
+} from '@stacks/transactions';
+
+import {
+  fetchCallReadOnlyFunction,
+  cvToJSON,
+} from '@stacks/blockchain-api-client';
+
+import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check Before Write" icon="magnifying-glass">
+    Use `checkHasProfile` before creating profiles to avoid duplicate transactions
+  </Card>
+  <Card title="Hash Strategies" icon="hashtag">
+    Always hash strategy content before anchoring to ensure data integrity
+  </Card>
+  <Card title="Handle Nulls" icon="circle-xmark">
+    Check for `null` returns and provide fallback UI for failed transactions
+  </Card>
+  <Card title="Show Transaction Links" icon="link">
+    Display explorer links so users can verify their on-chain data
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+- [Authentication Guide](/api/authentication) - Connect wallets before calling contract functions
+- [Stacks API Service](/api/stacks-api) - Read blockchain data
+- [AI Service](/api/ai-service) - Generate strategies to anchor

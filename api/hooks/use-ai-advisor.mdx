@@ -1,0 +1,491 @@
+---
+title: 'useAIAdvisor'
+description: 'Generate personalized DeFi strategies with AI for connected wallets'
+icon: 'brain'
+---
+
+## Overview
+
+The `useAIAdvisor` hook provides a React interface to the AI strategy generation service. It manages loading states, error handling, risk profile selection, and strategy caching for a seamless user experience.
+
+**Source:** `src/hooks/useAIAdvisor.js`
+
+## Import
+
+```javascript
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+```
+
+## Hook Signature
+
+```javascript
+function useAIAdvisor({
+  address: string,
+  stxBalance: string,
+  sbtcBalance: string,
+  totalUSD: string,
+}): {
+  strategy: string | null,
+  loading: boolean,
+  error: string | null,
+  riskProfile: string,
+  setRiskProfile: (profile: string) => void,
+  fetchStrategy: () => Promise<void>,
+}
+```
+
+## Parameters
+
+<ParamField path="address" type="string" required>
+  User's Stacks wallet address. Used as context for AI strategy generation.
+</ParamField>
+
+<ParamField path="stxBalance" type="string" required>
+  User's STX token balance (e.g., `"100.5000"`). Must be formatted as a string to preserve precision.
+</ParamField>
+
+<ParamField path="sbtcBalance" type="string" required>
+  User's sBTC token balance (e.g., `"0.00500000"`). Must be formatted as a string with full precision.
+</ParamField>
+
+<ParamField path="totalUSD" type="string" required>
+  Total portfolio value in USD (e.g., `"285.50"`). Used by AI to recommend appropriate protocols.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="strategy" type="string | null">
+  The AI-generated strategy text in markdown format. `null` before first generation or while loading.
+  
+  Contains:
+  - Welcome message (for new users) or strategy overview
+  - Specific protocol recommendations
+  - Allocation percentages
+  - Projected returns
+  - Risk assessment
+  - Step-by-step execution instructions
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while AI is generating a strategy, `false` otherwise. Use this to show loading indicators.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if strategy generation fails. `null` if no error. Example: `"Failed to generate strategy. Please try again."`
+</ResponseField>
+
+<ResponseField name="riskProfile" type="string">
+  Current risk profile selection. One of: `"Conservative"`, `"Balanced"` (default), or `"Aggressive"`.
+  
+  Affects AI recommendations:
+  - **Conservative:** Lower APY, established protocols, minimal risk
+  - **Balanced:** Mixed allocation, moderate returns
+  - **Aggressive:** Higher APY opportunities, newer protocols, higher risk
+</ResponseField>
+
+<ResponseField name="setRiskProfile" type="function">
+  Update the risk profile. Automatically clears previous strategy and error states.
+  
+  **Signature:** `(profile: string) => void`
+  
+  **Valid values:** `"Conservative"`, `"Balanced"`, `"Aggressive"`
+</ResponseField>
+
+<ResponseField name="fetchStrategy" type="function">
+  Trigger AI strategy generation. Requires `address` to be set. Automatically manages loading and error states.
+  
+  **Signature:** `() => Promise<void>`
+</ResponseField>
+
+## Usage Example
+
+<CodeGroup>
+```jsx Basic Usage
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function AIStrategyPanel() {
+  const { address } = useWallet();
+  const { portfolio } = usePortfolio(address);
+  
+  const { 
+    strategy, 
+    loading, 
+    error, 
+    riskProfile, 
+    setRiskProfile, 
+    fetchStrategy 
+  } = useAIAdvisor({
+    address,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD,
+  });
+
+  return (
+    <div>
+      <select 
+        value={riskProfile} 
+        onChange={(e) => setRiskProfile(e.target.value)}
+      >
+        <option value="Conservative">Conservative</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Aggressive">Aggressive</option>
+      </select>
+      
+      <button onClick={fetchStrategy} disabled={loading || !address}>
+        {loading ? 'Generating...' : 'Get Strategy'}
+      </button>
+      
+      {error && <div className="error">{error}</div>}
+      
+      {strategy && (
+        <div className="strategy-output">
+          <pre>{strategy}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx With Risk Profile Tabs
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function AIAdvisor({ address, stxBalance, sbtcBalance, totalUSD }) {
+  const { 
+    strategy, 
+    loading, 
+    error, 
+    riskProfile, 
+    setRiskProfile, 
+    fetchStrategy 
+  } = useAIAdvisor({ address, stxBalance, sbtcBalance, totalUSD });
+
+  const riskOptions = ['Conservative', 'Balanced', 'Aggressive'];
+
+  return (
+    <div className="ai-advisor">
+      <h2>AI DeFi Copilot</h2>
+      
+      {/* Risk Profile Selector */}
+      <div className="risk-tabs">
+        {riskOptions.map(risk => (
+          <button
+            key={risk}
+            onClick={() => setRiskProfile(risk)}
+            className={riskProfile === risk ? 'active' : ''}
+          >
+            {risk}
+          </button>
+        ))}
+      </div>
+      
+      {/* Generate Button */}
+      <button 
+        onClick={fetchStrategy} 
+        disabled={loading || !address}
+        className="generate-btn"
+      >
+        {loading ? (
+          <><span className="spinner" /> Analyzing portfolio...</>
+        ) : (
+          'Get My Strategy'
+        )}
+      </button>
+      
+      {/* Error Display */}
+      {error && (
+        <div className="error-banner">
+          <span>⚠️</span>
+          <p>{error}</p>
+        </div>
+      )}
+      
+      {/* Strategy Display */}
+      {strategy && !loading && (
+        <div className="strategy-card">
+          <div className="strategy-header">
+            <span className="status-indicator" />
+            <span>Strategy generated · {riskProfile} profile</span>
+          </div>
+          <div className="strategy-content">
+            {strategy.split('\n').map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx Full Dashboard Integration
+import { useWallet } from './hooks/useWallet';
+import { usePortfolio } from './hooks/usePortfolio';
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function Dashboard() {
+  const { connected, address, connectWallet } = useWallet();
+  const { portfolio, loading: portfolioLoading } = usePortfolio(address);
+  
+  const { 
+    strategy, 
+    loading: strategyLoading, 
+    error, 
+    riskProfile, 
+    setRiskProfile, 
+    fetchStrategy 
+  } = useAIAdvisor({
+    address,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD,
+  });
+
+  if (!connected) {
+    return (
+      <div className="connect-prompt">
+        <h2>Connect wallet to access AI advisor</h2>
+        <button onClick={connectWallet}>Connect Wallet</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard">
+      {/* Portfolio Section */}
+      <section className="portfolio">
+        <h2>Portfolio</h2>
+        {portfolioLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <div>
+            <p>STX: {portfolio.stxBalance}</p>
+            <p>sBTC: {portfolio.sbtcBalance}</p>
+            <p>Total: ${portfolio.totalUSD}</p>
+          </div>
+        )}
+      </section>
+      
+      {/* AI Advisor Section */}
+      <section className="ai-advisor">
+        <h2>AI Strategy</h2>
+        
+        <div className="risk-selector">
+          {['Conservative', 'Balanced', 'Aggressive'].map(risk => (
+            <button
+              key={risk}
+              onClick={() => setRiskProfile(risk)}
+              className={riskProfile === risk ? 'active' : ''}
+            >
+              {risk}
+            </button>
+          ))}
+        </div>
+        
+        <button 
+          onClick={fetchStrategy} 
+          disabled={strategyLoading || portfolioLoading}
+        >
+          {strategyLoading ? 'Generating...' : 'Generate Strategy'}
+        </button>
+        
+        {error && <div className="error">{error}</div>}
+        {strategy && <div className="strategy">{strategy}</div>}
+      </section>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## State Management
+
+The hook automatically manages several states:
+
+<Steps>
+  <Step title="Initial State">
+    All states are `null` or default values. Strategy is not loaded until `fetchStrategy()` is called.
+  </Step>
+  
+  <Step title="Loading State">
+    When `fetchStrategy()` is called:
+    - `loading` becomes `true`
+    - `error` is cleared
+    - `strategy` is cleared (previous strategy is removed)
+  </Step>
+  
+  <Step title="Success State">
+    When AI responds successfully:
+    - `strategy` contains the generated markdown text
+    - `loading` returns to `false`
+    - `error` remains `null`
+  </Step>
+  
+  <Step title="Error State">
+    If generation fails:
+    - `error` contains descriptive message
+    - `loading` returns to `false`
+    - `strategy` remains `null`
+  </Step>
+</Steps>
+
+## Risk Profile Behavior
+
+The `riskProfile` state affects AI recommendations:
+
+```javascript
+const { riskProfile, setRiskProfile } = useAIAdvisor({...});
+
+// Change risk profile
+setRiskProfile('Aggressive');
+
+// Then regenerate strategy
+fetchStrategy();
+```
+
+<CardGroup cols={3}>
+  <Card title="Conservative" icon="shield">
+    **Focus:** Capital preservation
+    
+    **Recommendations:**
+    - Established protocols only
+    - Lower APY (5-8%)
+    - Minimal smart contract risk
+    - Single-asset strategies
+  </Card>
+  
+  <Card title="Balanced" icon="scale-balanced">
+    **Focus:** Risk-adjusted returns
+    
+    **Recommendations:**
+    - Mix of established and emerging protocols
+    - Moderate APY (8-15%)
+    - Diversified allocations
+    - Multi-protocol strategies
+  </Card>
+  
+  <Card title="Aggressive" icon="rocket">
+    **Focus:** Maximum yield
+    
+    **Recommendations:**
+    - New and high-yield protocols
+    - Higher APY (15%+)
+    - Leverage and compounding
+    - Advanced strategies
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+The hook catches and formats errors from the AI service:
+
+```javascript
+try {
+  const result = await getAIStrategy({...});
+  setStrategy(result);
+} catch (err) {
+  setError('Failed to generate strategy. Please try again.');
+  console.error('AI strategy error:', err);
+}
+```
+
+Common errors:
+- API key missing or invalid
+- Network request failed
+- Rate limit exceeded
+- Invalid portfolio data
+
+## Protocol Integration
+
+The hook automatically includes current protocol data:
+
+```javascript
+import { PROTOCOLS } from '../services/protocolData';
+
+// Passed to AI service automatically
+const result = await getAIStrategy({
+  address,
+  stxBalance,
+  sbtcBalance,
+  totalUSD,
+  riskProfile,
+  protocols: PROTOCOLS, // Current protocol list with APY, TVL, etc.
+});
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Require Address" icon="user">
+    Always check if `address` exists before calling `fetchStrategy()`. Display a connect prompt if not.
+  </Card>
+  <Card title="Loading Indicators" icon="spinner">
+    Show loading state during generation. AI responses can take 2-5 seconds.
+  </Card>
+  <Card title="Error Display" icon="exclamation-triangle">
+    Always display the `error` message to users when strategy generation fails.
+  </Card>
+  <Card title="Strategy Caching" icon="database">
+    Consider caching strategies in localStorage to avoid unnecessary API calls.
+  </Card>
+</CardGroup>
+
+## Common Patterns
+
+### Automatic Generation on Mount
+
+```javascript
+import { useEffect } from 'react';
+
+function AutoStrategy({ address, stxBalance, sbtcBalance, totalUSD }) {
+  const { strategy, loading, fetchStrategy } = useAIAdvisor({
+    address, stxBalance, sbtcBalance, totalUSD
+  });
+  
+  // Generate strategy automatically when component mounts
+  useEffect(() => {
+    if (address) {
+      fetchStrategy();
+    }
+  }, [address]);
+  
+  return <div>{loading ? 'Loading...' : strategy}</div>;
+}
+```
+
+### Regenerate on Risk Change
+
+```javascript
+function SmartAdvisor(props) {
+  const { riskProfile, setRiskProfile, fetchStrategy } = useAIAdvisor(props);
+  
+  const handleRiskChange = (newRisk) => {
+    setRiskProfile(newRisk);
+    // Automatically regenerate with new risk profile
+    fetchStrategy();
+  };
+  
+  return (
+    <select value={riskProfile} onChange={(e) => handleRiskChange(e.target.value)}>
+      <option value="Conservative">Conservative</option>
+      <option value="Balanced">Balanced</option>
+      <option value="Aggressive">Aggressive</option>
+    </select>
+  );
+}
+```
+
+## Related Hooks
+
+- [useWallet](/api/hooks/use-wallet) - Get connected wallet address
+- [usePortfolio](/api/hooks/use-portfolio) - Fetch portfolio data for AI input
+- [useProtocols](/api/hooks/use-protocols) - Browse available DeFi protocols
+
+## Related Services
+
+- [AI Service](/api/ai-service) - Underlying AI strategy generation service
+- [Protocol Data](/api/protocol-data) - Protocol information used by AI

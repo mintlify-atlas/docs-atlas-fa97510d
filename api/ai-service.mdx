@@ -1,0 +1,380 @@
+---
+title: 'AI Service'
+description: 'Generate personalized DeFi strategies using Google Gemini AI'
+icon: 'brain'
+---
+
+## Overview
+
+The AI Service provides intelligent, context-aware DeFi strategy generation using Google's Gemini 1.5 Flash model. It analyzes user portfolios, risk profiles, and available protocols to deliver personalized recommendations.
+
+**Source:** `src/services/aiService.js`
+
+## getAIStrategy
+
+Generate a personalized DeFi strategy based on user portfolio and preferences.
+
+### Function Signature
+
+```javascript
+async function getAIStrategy({
+  address,
+  stxBalance,
+  sbtcBalance,
+  totalUSD,
+  riskProfile,
+  protocols,
+  strategyCount = 0,
+  txCount = 0,
+}): Promise<string>
+```
+
+### Parameters
+
+<ParamField path="address" type="string" required>
+  User's Stacks wallet address (used for context in AI prompt)
+</ParamField>
+
+<ParamField path="stxBalance" type="string" required>
+  User's STX token balance (e.g., "100.5000")
+</ParamField>
+
+<ParamField path="sbtcBalance" type="string" required>
+  User's sBTC token balance (e.g., "0.00500000")
+</ParamField>
+
+<ParamField path="totalUSD" type="string" required>
+  Total portfolio value in USD (e.g., "285.50")
+</ParamField>
+
+<ParamField path="riskProfile" type="string" required>
+  User's risk tolerance: `"Conservative"`, `"Balanced"`, or `"Aggressive"`
+</ParamField>
+
+<ParamField path="protocols" type="array" required>
+  Array of available DeFi protocols. Each protocol should have:
+  - `name` (string): Protocol name
+  - `type` (string): Protocol type (Lending, DEX, Yield, Stacking)
+  - `apy` (string): Annual percentage yield
+  - `risk` (string): Risk level (Low, Medium, High)
+  - `asset` (string): Accepted assets (STX, sBTC, etc.)
+  - `tvl` (string): Total value locked
+</ParamField>
+
+<ParamField path="strategyCount" type="number" default={0}>
+  Number of strategies previously generated for this user. Used to personalize recommendations for new vs. experienced users.
+</ParamField>
+
+<ParamField path="txCount" type="number" default={0}>
+  User's transaction count. Helps identify DeFi experience level.
+</ParamField>
+
+### Return Value
+
+<ResponseField name="strategy" type="string">
+  Formatted markdown strategy text with personalized recommendations. Includes:
+  - Welcome message (for new users) or strategy overview
+  - Specific protocol recommendations
+  - Allocation percentages
+  - Projected returns
+  - Risk assessment
+  - Step-by-step execution instructions
+</ResponseField>
+
+### User Experience Personalization
+
+The AI adapts its response based on user experience:
+
+<Tabs>
+  <Tab title="New User">
+    **Criteria:** `strategyCount === 0 && txCount < 3`
+    
+    **Strategy Format:**
+    - Warm welcome to Bitcoin DeFi
+    - Single, simple starting protocol
+    - Plain English explanations
+    - Basic concepts and analogies
+    - Conservative recommendations
+    - Detailed step-by-step guide
+    
+    ```markdown
+    👋 WELCOME TO BITCOIN DEFI
+    🎯 YOUR FIRST STRATEGY
+    📖 WHAT THIS MEANS
+    💰 WHAT YOU COULD EARN
+    🛡️ IS IT SAFE?
+    🚀 HOW TO START
+    ```
+  </Tab>
+  
+  <Tab title="Experienced User">
+    **Criteria:** `strategyCount > 5 || txCount > 20`
+    
+    **Strategy Format:**
+    - Direct, advanced recommendations
+    - Multi-protocol strategies
+    - Specific allocation percentages
+    - Optimization tactics
+    - Compounding strategies
+    - Yield maximization
+    
+    ```markdown
+    🎯 STRATEGY
+    📊 ALLOCATION
+    💰 PROJECTED RETURN
+    ⚡ OPTIMIZATION
+    ⚠️ KEY RISK
+    🚀 EXECUTE NOW
+    ```
+  </Tab>
+  
+  <Tab title="Intermediate User">
+    **Criteria:** Default case (some experience)
+    
+    **Strategy Format:**
+    - Balanced explanation with actionable advice
+    - Mix of education and advanced tactics
+    - Multiple protocol recommendations
+    - Risk-adjusted strategies
+  </Tab>
+</Tabs>
+
+### Usage Example
+
+<CodeGroup>
+```javascript Basic Usage
+import { getAIStrategy } from './services/aiService';
+import { PROTOCOLS } from './services/protocolData';
+
+// Get strategy for a new user
+const strategy = await getAIStrategy({
+  address: 'SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5',
+  stxBalance: '100.0000',
+  sbtcBalance: '0.00000000',
+  totalUSD: '285.00',
+  riskProfile: 'Balanced',
+  protocols: PROTOCOLS,
+  strategyCount: 0,
+  txCount: 1,
+});
+
+console.log(strategy);
+```
+
+```jsx React Component
+import { useState } from 'react';
+import { getAIStrategy } from './services/aiService';
+import { PROTOCOLS } from './services/protocolData';
+
+function AIStrategyGenerator({ portfolio, userStats }) {
+  const [strategy, setStrategy] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function generateStrategy(riskProfile) {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const result = await getAIStrategy({
+        address: portfolio.address,
+        stxBalance: portfolio.stxBalance,
+        sbtcBalance: portfolio.sbtcBalance,
+        totalUSD: portfolio.totalUSD,
+        riskProfile,
+        protocols: PROTOCOLS,
+        strategyCount: userStats.strategyCount,
+        txCount: userStats.txCount,
+      });
+      
+      setStrategy(result);
+    } catch (err) {
+      setError('Failed to generate strategy');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <button onClick={() => generateStrategy('Balanced')} disabled={loading}>
+        {loading ? 'Generating...' : 'Generate Strategy'}
+      </button>
+      
+      {error && <div className="error">{error}</div>}
+      
+      {strategy && (
+        <div className="strategy-output">
+          <pre>{strategy}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+```javascript With useAIAdvisor Hook
+import { useAIAdvisor } from './hooks/useAIAdvisor';
+
+function QuickStrategy() {
+  const { 
+    strategy, 
+    loading, 
+    error, 
+    riskProfile, 
+    setRiskProfile, 
+    fetchStrategy 
+  } = useAIAdvisor({
+    address: 'SP2H8PY27SEZ03MWRKS5XABZYQN17ETGQS3527SA5',
+    stxBalance: '100.0000',
+    sbtcBalance: '0.00000000',
+    totalUSD: '285.00',
+  });
+
+  return (
+    <div>
+      <select value={riskProfile} onChange={e => setRiskProfile(e.target.value)}>
+        <option value="Conservative">Conservative</option>
+        <option value="Balanced">Balanced</option>
+        <option value="Aggressive">Aggressive</option>
+      </select>
+      
+      <button onClick={fetchStrategy}>Generate</button>
+      
+      {loading && <p>Loading...</p>}
+      {error && <p>{error}</p>}
+      {strategy && <div>{strategy}</div>}
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+### API Configuration
+
+<ParamField path="VITE_GEMINI_API_KEY" type="string" required>
+  Google Gemini API key. Set this in your `.env` file:
+  
+  ```bash
+  VITE_GEMINI_API_KEY=your_gemini_api_key_here
+  ```
+</ParamField>
+
+The service automatically uses:
+- **Direct API access** in production (Vercel)
+- **Localhost proxy** in development (optional)
+
+```javascript
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`;
+```
+
+### AI Model Configuration
+
+<ParamField path="temperature" type="number" default={0.7}>
+  Controls randomness in AI responses (0.0 = deterministic, 1.0 = creative)
+</ParamField>
+
+<ParamField path="maxOutputTokens" type="number" default={1500}>
+  Maximum length of generated strategy text
+</ParamField>
+
+```javascript
+generationConfig: {
+  temperature: 0.7,
+  maxOutputTokens: 1500,
+}
+```
+
+### Error Handling
+
+The service throws errors with descriptive messages:
+
+```javascript
+try {
+  const strategy = await getAIStrategy({...});
+} catch (error) {
+  console.error('AI strategy generation failed:', error.message);
+  // Example errors:
+  // - "AI request failed"
+  // - "Invalid API key"
+  // - "Rate limit exceeded"
+}
+```
+
+### Protocol Data Format
+
+The `protocols` parameter expects this structure:
+
+```javascript
+const protocols = [
+  {
+    name: 'Zest Protocol',
+    type: 'Lending',
+    apy: '8.2',
+    tvl: '$48.2M',
+    asset: 'sBTC',
+    risk: 'Low',
+    description: 'Lend and borrow Bitcoin-backed assets...',
+    url: 'https://zestprotocol.com',
+  },
+  // ... more protocols
+];
+```
+
+### Prompt Engineering
+
+The AI uses a sophisticated prompt that includes:
+
+<Steps>
+  <Step title="Context Setting">
+    Establishes AI persona as "Staxiq, the smartest Bitcoin DeFi copilot"
+  </Step>
+  
+  <Step title="User Analysis">
+    Provides complete portfolio snapshot and transaction history
+  </Step>
+  
+  <Step title="Protocol Overview">
+    Lists all available protocols with APY, TVL, and risk metrics
+  </Step>
+  
+  <Step title="Experience Adaptation">
+    Adjusts instruction style based on user's DeFi experience level
+  </Step>
+  
+  <Step title="Format Specification">
+    Enforces consistent markdown output format for easy parsing
+  </Step>
+</Steps>
+
+### Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Fast Model" icon="bolt">
+    Uses Gemini 1.5 Flash for sub-second response times
+  </Card>
+  <Card title="Direct API" icon="network-wired">
+    Bypasses proxies in production for minimal latency
+  </Card>
+  <Card title="Efficient Prompts" icon="file-lines">
+    Optimized token usage with concise protocol summaries
+  </Card>
+  <Card title="Error Recovery" icon="shield">
+    Graceful fallbacks with descriptive error messages
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+1. **Always provide up-to-date protocol data** to ensure accurate recommendations
+2. **Include transaction history** for better user experience personalization
+3. **Handle loading states** to inform users the AI is working (can take 2-5 seconds)
+4. **Cache strategies** if user re-requests without changing parameters
+5. **Sanitize strategy output** before rendering (remove potentially unsafe markdown)
+
+## Related Resources
+
+- [useAIAdvisor Hook](/api/hooks/use-ai-advisor) - React hook wrapper for AI service
+- [Protocol Data](/api/protocol-data) - Protocol configuration reference
+- [Contract Service](/api/contract-service) - Save strategies on-chain

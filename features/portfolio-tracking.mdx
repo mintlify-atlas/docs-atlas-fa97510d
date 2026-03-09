@@ -1,0 +1,169 @@
+---
+title: 'Portfolio Tracking'
+description: 'Real-time portfolio monitoring for your STX and sBTC holdings with live price feeds and transaction history'
+icon: 'chart-line'
+---
+
+## Overview
+
+Staxiq's Portfolio Tracking provides real-time visibility into your Stacks wallet holdings, featuring live balance tracking, USD valuations, and transaction history. Connect your wallet to automatically monitor your STX and sBTC assets with 30-second refresh intervals.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Live Balance Tracking" icon="wallet">
+    Real-time STX and sBTC balances with animated count-up displays
+  </Card>
+  <Card title="USD Valuation" icon="dollar-sign">
+    Automatic price conversion to USD for total portfolio value
+  </Card>
+  <Card title="Transaction History" icon="clock-rotate-left">
+    Complete record of wallet activity with timestamps
+  </Card>
+  <Card title="Performance Charts" icon="chart-area">
+    30-day portfolio performance visualization
+  </Card>
+</CardGroup>
+
+## How It Works
+
+The portfolio tracker fetches wallet data from the Stacks blockchain API every 30 seconds using the `usePortfolio` hook:
+
+```javascript
+const { portfolio, loading, error } = usePortfolio(address);
+
+// Returns:
+// {
+//   stxBalance: '1234.56',
+//   sbtcBalance: '0.0045',
+//   totalUSD: 1234.50,
+//   txHistory: [...],
+//   stxPrice: 0.26
+// }
+```
+
+## Getting Started
+
+<Steps>
+  <Step title="Connect Your Wallet">
+    Click **Connect Wallet** in the navigation bar and approve the connection with your Leather, Xverse, or Hiro wallet.
+  </Step>
+  
+  <Step title="View Your Dashboard">
+    Your portfolio metrics appear automatically on the Dashboard with four key cards:
+    - **STX Balance** - Total STX held with orange accent
+    - **sBTC Balance** - Bitcoin on Stacks holdings
+    - **Total Value** - Combined USD value with green accent
+    - **Transactions** - Total transaction count
+  </Step>
+  
+  <Step title="Monitor Performance">
+    The 30-day performance chart shows your portfolio's historical value with:
+    - Interactive tooltips on hover
+    - Percentage change indicator
+    - Bitcoin-orange gradient styling
+  </Step>
+</Steps>
+
+## Portfolio Metrics
+
+### Balance Cards
+
+Each metric card includes:
+- **Colored accent bar** - Visual category indicator (orange for STX, green for USD value)
+- **Animated counters** - Smooth count-up animation on load
+- **Unit labels** - Clear denomination (STX, sBTC, USD)
+- **Hover effects** - Enhanced shadow on interaction
+
+### Chart Features
+
+The portfolio chart generates a stable 30-day history based on:
+- Current wallet value
+- Address-seeded randomization for consistent historical data
+- Smooth area gradient (Bitcoin orange)
+- Responsive design for mobile and desktop
+
+```javascript
+// Chart data structure
+const data = [
+  { day: '30d', value: 980.45 },
+  { day: '29d', value: 995.23 },
+  // ... 
+  { day: 'Today', value: 1234.50 }
+];
+```
+
+## Transaction History
+
+Recent transactions display:
+- Transaction type (transfer, contract call, etc.)
+- STX amount moved
+- Timestamp and date
+- Transaction hash with explorer link
+- Success/pending status indicators
+
+## Demo Mode
+
+Test the portfolio tracker without connecting a wallet:
+
+<Note>
+  Demo mode shows a sample portfolio with realistic data:
+  - **STX Balance:** 12,456.78 STX
+  - **sBTC Balance:** 0.0234 sBTC  
+  - **Total Value:** $4,832.45 USD
+  - **Transaction Count:** 47 transactions
+</Note>
+
+Demo mode displays a banner with the option to connect your real wallet anytime.
+
+## Data Updates
+
+<Info>
+  Portfolio data refreshes automatically every **30 seconds** while the dashboard is open. Manual refresh is not required.
+</Info>
+
+## Code Reference
+
+Key implementation files:
+- **Hook:** `src/hooks/usePortfolio.js` - Data fetching logic
+- **Component:** `src/pages/Dashboard.jsx:78-133` - Portfolio metric cards
+- **Chart:** `src/components/PortfolioChart.jsx` - Performance visualization
+- **Service:** `src/services/stacksApi.js` - Blockchain API integration
+
+## Advanced Usage
+
+<Tip>
+  **Multi-wallet tracking:** Switch between wallets by disconnecting and reconnecting with a different address. Each wallet's data is fetched independently.
+</Tip>
+
+### Custom Refresh Intervals
+
+The default 30-second refresh can be adjusted in `usePortfolio.js:34`:
+
+```javascript
+// Change refresh interval (milliseconds)
+const interval = setInterval(fetchPortfolio, 30000); // 30 seconds
+```
+
+## Troubleshooting
+
+**Portfolio shows "--" or loading state:**
+- Ensure wallet is properly connected
+- Check network connection
+- Verify wallet has transaction history on Stacks mainnet
+
+**Balances seem incorrect:**
+- Wait 30 seconds for next automatic refresh
+- Recent transactions may take 1-2 minutes to appear on-chain
+- Demo mode data is for demonstration only
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Protocol Comparison" icon="chart-bar" href="/features/protocol-comparison">
+    Compare yields across all Stacks DeFi protocols
+  </Card>
+  <Card title="AI Copilot" icon="robot" href="/features/ai-copilot">
+    Get personalized strategies based on your portfolio
+  </Card>
+</CardGroup>

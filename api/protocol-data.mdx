@@ -1,0 +1,435 @@
+---
+title: 'Protocol Data'
+description: 'Static protocol configuration and metadata for Stacks DeFi protocols'
+icon: 'database'
+---
+
+## Overview
+
+The Protocol Data module provides static configuration for supported DeFi protocols on the Stacks blockchain. This data is used throughout the application for protocol selection, filtering, and AI strategy generation.
+
+**Source:** `src/services/protocolData.js`
+
+## PROTOCOLS
+
+Array of protocol configurations with detailed metadata.
+
+```javascript
+export const PROTOCOLS: Array<Protocol>
+```
+
+### Protocol Object Structure
+
+<ResponseField name="PROTOCOLS" type="array">
+  Array of protocol configuration objects
+  
+  <ResponseField name="id" type="string">
+    Unique protocol identifier (lowercase, no spaces)
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Display name of the protocol
+  </ResponseField>
+  
+  <ResponseField name="type" type="string">
+    Protocol category: `"Lending"`, `"DEX"`, `"Yield"`, or `"Stacking"`
+  </ResponseField>
+  
+  <ResponseField name="apy" type="string">
+    Annual Percentage Yield (numeric string, e.g., "8.2")
+  </ResponseField>
+  
+  <ResponseField name="tvl" type="string">
+    Total Value Locked (formatted string, e.g., "$48.2M")
+  </ResponseField>
+  
+  <ResponseField name="asset" type="string">
+    Supported assets (e.g., "sBTC", "STX", "sBTC/STX")
+  </ResponseField>
+  
+  <ResponseField name="risk" type="string">
+    Risk level: `"Low"`, `"Medium"`, or `"High"`
+  </ResponseField>
+  
+  <ResponseField name="description" type="string">
+    Short description of the protocol's functionality
+  </ResponseField>
+  
+  <ResponseField name="url" type="string">
+    Official protocol website URL
+  </ResponseField>
+  
+  <ResponseField name="color" type="string">
+    Brand color (hex code, e.g., "#F7931A")
+  </ResponseField>
+  
+  <ResponseField name="icon" type="string">
+    Emoji icon for visual identification
+  </ResponseField>
+</ResponseField>
+
+## Available Protocols
+
+### Zest Protocol
+
+<Card title="Zest Protocol" icon="building-columns">
+  **Type:** Lending  
+  **APY:** 8.2%  
+  **TVL:** $48.2M  
+  **Risk:** Low
+  
+  Lend and borrow Bitcoin-backed assets with transparent on-chain rates.
+  
+  [Visit Protocol →](https://zestprotocol.com)
+</Card>
+
+```javascript
+{
+  id: 'zest',
+  name: 'Zest Protocol',
+  type: 'Lending',
+  apy: '8.2',
+  tvl: '$48.2M',
+  asset: 'sBTC',
+  risk: 'Low',
+  description: 'Lend and borrow Bitcoin-backed assets with transparent on-chain rates.',
+  url: 'https://zestprotocol.com',
+  color: '#F7931A',
+  icon: '🏦',
+}
+```
+
+### Bitflow
+
+<Card title="Bitflow" icon="arrows-rotate">
+  **Type:** DEX  
+  **APY:** 12.4%  
+  **TVL:** $31.7M  
+  **Risk:** Medium
+  
+  Decentralized exchange aggregator for the best sBTC swap rates on Stacks.
+  
+  [Visit Protocol →](https://bitflow.finance)
+</Card>
+
+### ALEX Lab
+
+<Card title="ALEX Lab" icon="bolt">
+  **Type:** DEX  
+  **APY:** 15.1%  
+  **TVL:** $124.5M  
+  **Risk:** Medium
+  
+  The leading Bitcoin DeFi super app — swap, earn, and launch on Stacks.
+  
+  [Visit Protocol →](https://alexlab.co)
+</Card>
+
+### Hermetica
+
+<Card title="Hermetica" icon="crystal-ball">
+  **Type:** Yield  
+  **APY:** 18.7%  
+  **TVL:** $9.8M  
+  **Risk:** High
+  
+  Bitcoin-backed synthetic dollar yielding protocol built on Stacks.
+  
+  [Visit Protocol →](https://hermetica.fi)
+</Card>
+
+### StackingDAO
+
+<Card title="StackingDAO" icon="layer-group">
+  **Type:** Stacking  
+  **APY:** 9.5%  
+  **TVL:** $89.3M  
+  **Risk:** Low
+  
+  Liquid stacking protocol — stack STX and keep liquidity with stSTX.
+  
+  [Visit Protocol →](https://stackingdao.com)
+</Card>
+
+### Granite
+
+<Card title="Granite" icon="mountain">
+  **Type:** Lending  
+  **APY:** 7.8%  
+  **TVL:** $18.6M  
+  **Risk:** Low
+  
+  Borrow stablecoins against your Bitcoin collateral on Stacks.
+  
+  [Visit Protocol →](https://granite.finance)
+</Card>
+
+### Velar
+
+<Card title="Velar" icon="chart-line">
+  **Type:** DEX  
+  **APY:** 11.3%  
+  **TVL:** $431K  
+  **Risk:** Medium
+  
+  Perpetuals and spot trading protocol on Bitcoin L2 via Stacks.
+  
+  [Visit Protocol →](https://velar.co)
+</Card>
+
+## RISK_STYLES
+
+CSS class mappings for risk level styling.
+
+```javascript
+export const RISK_STYLES = {
+  Low: 'text-green-500',
+  Medium: 'text-yellow-500',
+  High: 'text-red-500',
+};
+```
+
+### Usage Example
+
+```jsx
+function RiskBadge({ risk }) {
+  return (
+    <span className={RISK_STYLES[risk]}>
+      {risk} Risk
+    </span>
+  );
+}
+```
+
+## FILTER_TYPES
+
+Available protocol type filters.
+
+```javascript
+export const FILTER_TYPES = ['All', 'Lending', 'DEX', 'Yield', 'Stacking'];
+```
+
+### Usage Example
+
+```jsx
+import { FILTER_TYPES } from './services/protocolData';
+
+function ProtocolFilter({ selected, onSelect }) {
+  return (
+    <div>
+      {FILTER_TYPES.map(type => (
+        <button
+          key={type}
+          onClick={() => onSelect(type)}
+          className={selected === type ? 'active' : ''}
+        >
+          {type}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+## Usage Examples
+
+<CodeGroup>
+```javascript Import Protocols
+import { PROTOCOLS } from './services/protocolData';
+
+// Get all protocols
+console.log(PROTOCOLS);
+
+// Filter by type
+const lendingProtocols = PROTOCOLS.filter(p => p.type === 'Lending');
+
+// Sort by APY
+const sortedByAPY = [...PROTOCOLS].sort((a, b) => 
+  parseFloat(b.apy) - parseFloat(a.apy)
+);
+
+// Find specific protocol
+const zest = PROTOCOLS.find(p => p.id === 'zest');
+```
+
+```jsx Protocol Cards
+import { PROTOCOLS, RISK_STYLES } from './services/protocolData';
+
+function ProtocolGrid() {
+  return (
+    <div className="grid">
+      {PROTOCOLS.map(protocol => (
+        <div key={protocol.id} className="card">
+          <span className="icon">{protocol.icon}</span>
+          <h3>{protocol.name}</h3>
+          <p>{protocol.description}</p>
+          
+          <div className="stats">
+            <span>APY: {protocol.apy}%</span>
+            <span>TVL: {protocol.tvl}</span>
+            <span className={RISK_STYLES[protocol.risk]}>
+              {protocol.risk} Risk
+            </span>
+          </div>
+          
+          <a href={protocol.url} target="_blank">
+            Visit Protocol
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```javascript AI Strategy Integration
+import { getAIStrategy } from './services/aiService';
+import { PROTOCOLS } from './services/protocolData';
+
+async function generateStrategy(userAddress, portfolio, riskProfile) {
+  const strategy = await getAIStrategy({
+    address: userAddress,
+    stxBalance: portfolio.stxBalance,
+    sbtcBalance: portfolio.sbtcBalance,
+    totalUSD: portfolio.totalUSD,
+    riskProfile,
+    protocols: PROTOCOLS, // Pass all protocols to AI
+  });
+  
+  return strategy;
+}
+```
+
+```jsx Filter & Sort
+import { PROTOCOLS, FILTER_TYPES } from './services/protocolData';
+import { useState } from 'react';
+
+function ProtocolExplorer() {
+  const [filter, setFilter] = useState('All');
+  
+  const filtered = filter === 'All'
+    ? PROTOCOLS
+    : PROTOCOLS.filter(p => p.type === filter);
+  
+  const sorted = [...filtered].sort((a, b) =>
+    parseFloat(b.apy) - parseFloat(a.apy)
+  );
+  
+  return (
+    <div>
+      <div className="filters">
+        {FILTER_TYPES.map(type => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={filter === type ? 'active' : ''}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+      
+      <div className="protocols">
+        {sorted.map(protocol => (
+          <ProtocolCard key={protocol.id} {...protocol} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Protocol Statistics
+
+<CardGroup cols={2}>
+  <Card title="Total Protocols" icon="hashtag">
+    **7** protocols supported
+  </Card>
+  <Card title="Average APY" icon="percent">
+    **11.9%** across all protocols
+  </Card>
+  <Card title="Total TVL" icon="coins">
+    **$322.6M** combined liquidity
+  </Card>
+  <Card title="Risk Distribution" icon="shield">
+    3 Low, 3 Medium, 1 High risk protocols
+  </Card>
+</CardGroup>
+
+## Protocol Types
+
+<Tabs>
+  <Tab title="Lending (3)">
+    Protocols that allow lending and borrowing:
+    - **Zest Protocol** - 8.2% APY
+    - **Granite** - 7.8% APY
+    - Average: 8.0% APY
+  </Tab>
+  
+  <Tab title="DEX (3)">
+    Decentralized exchanges:
+    - **ALEX Lab** - 15.1% APY
+    - **Bitflow** - 12.4% APY
+    - **Velar** - 11.3% APY
+    - Average: 12.9% APY
+  </Tab>
+  
+  <Tab title="Yield (1)">
+    Yield generation protocols:
+    - **Hermetica** - 18.7% APY
+  </Tab>
+  
+  <Tab title="Stacking (1)">
+    STX stacking protocols:
+    - **StackingDAO** - 9.5% APY
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Data Updated" icon="clock">
+    APY and TVL should be updated regularly (consider dynamic data sources)
+  </Card>
+  <Card title="Type Safety" icon="shield-check">
+    Validate protocol data structure when extending or modifying
+  </Card>
+  <Card title="Consistent Formatting" icon="align-left">
+    Use consistent formats for APY (string numbers) and TVL (e.g., "$XM")
+  </Card>
+  <Card title="Icon Selection" icon="icons">
+    Use recognizable emojis that represent the protocol's function
+  </Card>
+</CardGroup>
+
+## Extending Protocol Data
+
+To add a new protocol:
+
+```javascript
+const newProtocol = {
+  id: 'new-protocol',           // Unique, lowercase ID
+  name: 'New Protocol',         // Display name
+  type: 'Lending',              // Must match FILTER_TYPES
+  apy: '10.5',                  // String number
+  tvl: '$25M',                  // Formatted string
+  asset: 'sBTC',                // Supported assets
+  risk: 'Medium',               // Low/Medium/High
+  description: 'Description',   // Short pitch
+  url: 'https://...',           // Official site
+  color: '#000000',             // Brand color
+  icon: '🎯',                   // Emoji
+};
+
+export const PROTOCOLS = [
+  ...existingProtocols,
+  newProtocol,
+];
+```
+
+## Related Resources
+
+- [AI Service](/api/ai-service) - Uses protocol data for strategy generation
+- [useProtocols Hook](/api/hooks/use-protocols) - React hook for filtering protocols
+- [Compare Protocols Page](/features/protocol-comparison) - UI for protocol comparison

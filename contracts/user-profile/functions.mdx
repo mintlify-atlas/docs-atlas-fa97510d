@@ -1,0 +1,532 @@
+---
+title: 'Contract Functions'
+description: 'Complete reference for all staxiq-user-profile contract functions'
+icon: 'function'
+---
+
+## Public Functions
+
+Public functions modify blockchain state and require a signed transaction. Users must pay gas fees (STX) to execute these functions.
+
+### set-risk-profile
+
+Save or update user's risk tolerance level on-chain.
+
+```clarity contracts/staxiq-user-profile.clar:70
+(define-public (set-risk-profile (risk-level uint))
+  (begin
+    (asserts! (is-valid-risk-level risk-level) ERR-INVALID-RISK)
+    ;; ...
+    (ok risk-level)
+  )
+)
+```
+
+<ParamField path="risk-level" type="uint" required>
+  User's risk tolerance: `u1` (Conservative), `u2` (Balanced), or `u3` (Aggressive)
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <Expandable title="Success">
+    <ResponseField name="ok" type="uint">
+      Returns the risk level that was set
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Errors">
+    <ResponseField name="err u400" type="ERR-INVALID-RISK">
+      Invalid risk level provided (must be 1, 2, or 3)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Behavior
+
+- If profile exists: Updates `risk-level` and `updated-at`, preserves `created-at` and `strategy-count`
+- If profile doesn't exist: Creates new profile with `created-at` set to current block height
+- Validates risk level is 1, 2, or 3 before writing
+- Transaction must be signed by the user (tx-sender)
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Frontend (JavaScript)
+import { makeContractCall, uintCV, AnchorMode } from '@stacks/transactions';
+
+const txOptions = {
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'set-risk-profile',
+  functionArgs: [uintCV(2)], // Set to Balanced
+  network: STACKS_TESTNET,
+  anchorMode: AnchorMode.Any,
+};
+
+const transaction = await makeContractCall(txOptions);
+const result = await broadcastTransaction({ transaction, network });
+```
+
+```javascript Using contractService.js
+import { saveRiskProfile } from './services/contractService';
+
+// Save "Balanced" risk profile
+const txId = await saveRiskProfile('Balanced');
+console.log('Transaction ID:', txId);
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile set-risk-profile u2)
+;; Returns: (ok u2)
+```
+</CodeGroup>
+
+---
+
+### save-strategy
+
+Anchor an AI-generated strategy recommendation to the blockchain.
+
+```clarity contracts/staxiq-user-profile.clar:99
+(define-public (save-strategy
+  (strategy-hash (string-ascii 64))
+  (protocol (string-ascii 32))
+)
+  (let (
+    (profile (map-get? user-profiles tx-sender))
+    (current-count (default-to u0 (map-get? user-strategy-count tx-sender)))
+    (new-count (+ current-count u1))
+  )
+    (asserts! (is-some profile) ERR-NOT-FOUND)
+    ;; ...
+    (ok new-count)
+  )
+)
+```
+
+<ParamField path="strategy-hash" type="string-ascii" maxLength="64" required>
+  SHA-256 hash (hex string) of the complete strategy details. Should be 64 characters.
+</ParamField>
+
+<ParamField path="protocol" type="string-ascii" maxLength="32" required>
+  Name of the target DeFi protocol (e.g., "ALEX", "Velar", "StackSwap"). Max 32 characters.
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <Expandable title="Success">
+    <ResponseField name="ok" type="uint">
+      Returns the new strategy ID (incrementing counter starting at 1)
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Errors">
+    <ResponseField name="err u404" type="ERR-NOT-FOUND">
+      User must have a risk profile before saving strategies. Call `set-risk-profile` first.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Behavior
+
+- Requires user to have an existing risk profile (call `set-risk-profile` first)
+- Increments strategy counter and assigns new strategy ID
+- Stores strategy with user's current risk level
+- Updates profile's `strategy-count` and `updated-at` fields
+- Each strategy is permanently stored and cannot be modified
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Frontend (JavaScript)
+import { makeContractCall, stringAsciiCV, AnchorMode } from '@stacks/transactions';
+import crypto from 'crypto';
+
+// Hash the strategy
+const strategy = { protocol: 'ALEX', actions: [...], apy: 12.5 };
+const hash = crypto
+  .createHash('sha256')
+  .update(JSON.stringify(strategy))
+  .digest('hex');
+
+const txOptions = {
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'save-strategy',
+  functionArgs: [
+    stringAsciiCV(hash.slice(0, 64)),
+    stringAsciiCV('ALEX')
+  ],
+  network: STACKS_TESTNET,
+  anchorMode: AnchorMode.Any,
+};
+
+const transaction = await makeContractCall(txOptions);
+const result = await broadcastTransaction({ transaction, network });
+```
+
+```javascript Using contractService.js
+import { anchorStrategy } from './services/contractService';
+import crypto from 'crypto';
+
+const strategy = generateStrategy(); // Your AI strategy
+const hash = crypto
+  .createHash('sha256')
+  .update(JSON.stringify(strategy))
+  .digest('hex');
+
+const txId = await anchorStrategy(hash, 'ALEX');
+console.log('Strategy anchored with TX:', txId);
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile save-strategy
+  "a1b2c3d4e5f6..." ;; 64-char hash
+  "ALEX"            ;; protocol
+)
+;; Returns: (ok u1) - first strategy for this user
+```
+</CodeGroup>
+
+---
+
+## Read-Only Functions
+
+Read-only functions query blockchain data without modifying state. They are **free to call** (no gas fees) and return data instantly.
+
+### get-user-profile
+
+Retrieve complete profile information for a user.
+
+```clarity contracts/staxiq-user-profile.clar:142
+(define-read-only (get-user-profile (user principal))
+  (match (map-get? user-profiles user)
+    profile (ok profile)
+    ERR-NOT-FOUND
+  )
+)
+```
+
+<ParamField path="user" type="principal" required>
+  Stacks wallet address (e.g., `ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ`)
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <Expandable title="Success">
+    <ResponseField name="ok" type="object">
+      Profile data object
+      <Expandable title="Profile Fields">
+        <ResponseField name="risk-level" type="uint">
+          1 = Conservative, 2 = Balanced, 3 = Aggressive
+        </ResponseField>
+        <ResponseField name="created-at" type="uint">
+          Block height when profile was created
+        </ResponseField>
+        <ResponseField name="updated-at" type="uint">
+          Block height of last update
+        </ResponseField>
+        <ResponseField name="strategy-count" type="uint">
+          Total strategies saved by this user
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Errors">
+    <ResponseField name="err u404" type="ERR-NOT-FOUND">
+      User has not created a profile yet
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Frontend (JavaScript)
+import { fetchCallReadOnlyFunction, cvToJSON } from '@stacks/blockchain-api-client';
+import { principalCV } from '@stacks/transactions';
+
+const result = await fetchCallReadOnlyFunction({
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'get-user-profile',
+  functionArgs: [principalCV('ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ')],
+  senderAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  network: STACKS_TESTNET
+});
+
+const profile = cvToJSON(result);
+console.log(profile);
+// { risk_level: 2, created_at: 150000, updated_at: 150500, strategy_count: 3 }
+```
+
+```javascript Using contractService.js
+import { getUserProfile } from './services/contractService';
+
+const profile = await getUserProfile(userAddress);
+if (profile) {
+  console.log('Risk level:', profile.risk_level);
+  console.log('Strategies:', profile.strategy_count);
+}
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile get-user-profile 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ)
+;; Returns: (ok { risk-level: u2, created-at: u150000, updated-at: u150500, strategy-count: u3 })
+```
+</CodeGroup>
+
+---
+
+### get-strategy
+
+Retrieve a specific strategy from user's history.
+
+```clarity contracts/staxiq-user-profile.clar:150
+(define-read-only (get-strategy
+  (user principal)
+  (strategy-id uint)
+)
+  (match (map-get? strategy-history { user: user, strategy-id: strategy-id })
+    strategy (ok strategy)
+    ERR-NOT-FOUND
+  )
+)
+```
+
+<ParamField path="user" type="principal" required>
+  Stacks wallet address of the user
+</ParamField>
+
+<ParamField path="strategy-id" type="uint" required>
+  Strategy ID number (starting from 1)
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <Expandable title="Success">
+    <ResponseField name="ok" type="object">
+      Strategy details object
+      <Expandable title="Strategy Fields">
+        <ResponseField name="risk-level" type="uint">
+          User's risk level when strategy was generated
+        </ResponseField>
+        <ResponseField name="strategy-hash" type="string-ascii">
+          64-character SHA-256 hash of strategy
+        </ResponseField>
+        <ResponseField name="protocol" type="string-ascii">
+          DeFi protocol name (max 32 chars)
+        </ResponseField>
+        <ResponseField name="timestamp" type="uint">
+          Block height when strategy was saved
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Errors">
+    <ResponseField name="err u404" type="ERR-NOT-FOUND">
+      Strategy with this ID does not exist for this user
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Frontend (JavaScript)
+import { fetchCallReadOnlyFunction, cvToJSON } from '@stacks/blockchain-api-client';
+import { principalCV, uintCV } from '@stacks/transactions';
+
+const result = await fetchCallReadOnlyFunction({
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'get-strategy',
+  functionArgs: [
+    principalCV(userAddress),
+    uintCV(1) // Get first strategy
+  ],
+  senderAddress: userAddress,
+  network: STACKS_TESTNET
+});
+
+const strategy = cvToJSON(result);
+console.log(strategy);
+// { risk_level: 2, strategy_hash: "a1b2c3...", protocol: "ALEX", timestamp: 150000 }
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile get-strategy
+  'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ
+  u1
+)
+;; Returns: (ok { risk-level: u2, strategy-hash: "a1b2c3...", protocol: "ALEX", timestamp: u150000 })
+```
+</CodeGroup>
+
+---
+
+### get-strategy-count
+
+Get total number of strategies saved by a user.
+
+```clarity contracts/staxiq-user-profile.clar:161
+(define-read-only (get-strategy-count (user principal))
+  (ok (default-to u0 (map-get? user-strategy-count user)))
+)
+```
+
+<ParamField path="user" type="principal" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <ResponseField name="ok" type="uint">
+    Total number of strategies (returns `u0` if user has no strategies)
+  </ResponseField>
+</ResponseField>
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Using contractService.js
+import { getStrategyCount } from './services/contractService';
+
+const count = await getStrategyCount(userAddress);
+console.log(`User has ${count} strategies`);
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile get-strategy-count 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ)
+;; Returns: (ok u3)
+```
+</CodeGroup>
+
+---
+
+### has-profile
+
+Check if a user has created a risk profile.
+
+```clarity contracts/staxiq-user-profile.clar:166
+(define-read-only (has-profile (user principal))
+  (is-some (map-get? user-profiles user))
+)
+```
+
+<ParamField path="user" type="principal" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="Returns" type="bool">
+  `true` if user has a profile, `false` otherwise
+</ResponseField>
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Using contractService.js
+import { checkHasProfile } from './services/contractService';
+
+const hasProfile = await checkHasProfile(userAddress);
+if (!hasProfile) {
+  console.log('Please set your risk profile first');
+}
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile has-profile 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ)
+;; Returns: true
+```
+</CodeGroup>
+
+---
+
+### get-risk-label
+
+Get user's risk level as a human-readable string.
+
+```clarity contracts/staxiq-user-profile.clar:171
+(define-read-only (get-risk-label (user principal))
+  (match (map-get? user-profiles user)
+    profile (ok
+      (if (is-eq (get risk-level profile) RISK-CONSERVATIVE)
+        "Conservative"
+        (if (is-eq (get risk-level profile) RISK-BALANCED)
+          "Balanced"
+          "Aggressive"
+        )
+      )
+    )
+    ERR-NOT-FOUND
+  )
+)
+```
+
+<ParamField path="user" type="principal" required>
+  Stacks wallet address
+</ParamField>
+
+<ResponseField name="Returns" type="response">
+  <Expandable title="Success">
+    <ResponseField name="ok" type="string">
+      One of: `"Conservative"`, `"Balanced"`, or `"Aggressive"`
+    </ResponseField>
+  </Expandable>
+  <Expandable title="Errors">
+    <ResponseField name="err u404" type="ERR-NOT-FOUND">
+      User has no profile
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example Usage
+
+<CodeGroup>
+```javascript Frontend (JavaScript)
+import { fetchCallReadOnlyFunction, cvToJSON } from '@stacks/blockchain-api-client';
+import { principalCV } from '@stacks/transactions';
+
+const result = await fetchCallReadOnlyFunction({
+  contractAddress: 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ',
+  contractName: 'staxiq-user-profile',
+  functionName: 'get-risk-label',
+  functionArgs: [principalCV(userAddress)],
+  senderAddress: userAddress,
+  network: STACKS_TESTNET
+});
+
+const label = cvToJSON(result);
+console.log('Risk profile:', label); // "Balanced"
+```
+
+```clarity Clarinet Console
+(contract-call? .staxiq-user-profile get-risk-label 'ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ)
+;; Returns: (ok "Balanced")
+```
+</CodeGroup>
+
+---
+
+## Function Summary
+
+### Public Functions (Require Transaction)
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `set-risk-profile` | `risk-level: uint` | `(ok uint)` | Set/update user risk tolerance (1, 2, or 3) |
+| `save-strategy` | `strategy-hash: string-ascii(64)`<br/>`protocol: string-ascii(32)` | `(ok uint)` | Anchor AI strategy to blockchain, returns strategy ID |
+
+### Read-Only Functions (Free)
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `get-user-profile` | `user: principal` | `(ok profile)` | Get complete user profile |
+| `get-strategy` | `user: principal`<br/>`strategy-id: uint` | `(ok strategy)` | Get specific strategy details |
+| `get-strategy-count` | `user: principal` | `(ok uint)` | Get total strategy count |
+| `has-profile` | `user: principal` | `bool` | Check if user has profile |
+| `get-risk-label` | `user: principal` | `(ok string)` | Get risk level as readable string |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Integration Guide" icon="code" href="/contracts/user-profile/integration">
+    Learn how to call these functions from your app
+  </Card>
+  <Card title="Testing" icon="flask" href="/contracts/testing">
+    Test contract functions locally
+  </Card>
+</CardGroup>

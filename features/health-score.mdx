@@ -1,0 +1,436 @@
+---
+title: 'Wallet Health Score'
+description: 'Portfolio analysis across diversification, risk, and yield optimization with actionable recommendations'
+icon: 'heart-pulse'
+---
+
+## Overview
+
+The Wallet Health Score analyzes your Bitcoin DeFi portfolio and assigns a 0-100 rating based on diversification, activity level, portfolio size, and asset allocation. Get instant feedback on what's working and specific actions to improve your score.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Instant Scoring" icon="gauge-high">
+    Real-time calculation based on wallet holdings and transaction history
+  </Card>
+  <Card title="Issue Detection" icon="triangle-exclamation">
+    Identifies problems dragging your score down with impact points
+  </Card>
+  <Card title="Actionable Fixes" icon="lightbulb">
+    Specific recommendations to improve each issue
+  </Card>
+  <Card title="Strength Highlights" icon="badge-check">
+    Shows what you're doing right in your portfolio
+  </Card>
+</CardGroup>
+
+## Score Breakdown
+
+Your health score (0-100) is calculated from five factors:
+
+### 1. Active Funds (20 points)
+
+<Note>
+  **Criteria:** Wallet contains funds (totalUSD > 0)  
+  **Why it matters:** Can't participate in DeFi without capital
+</Note>
+
+```javascript
+if (totalUSD > 0) {
+  score += 20;
+  wins.push('Wallet has active funds');
+} else {
+  issues.push({
+    text: 'No funds detected in wallet',
+    impact: -20,
+    fix: 'Add STX or sBTC to start earning'
+  });
+}
+```
+
+### 2. sBTC Holdings (25 points)
+
+<Note>
+  **Criteria:** sbtcBalance > 0  
+  **Why it matters:** sBTC unlocks higher yields than STX alone
+</Note>
+
+```javascript
+if (parseFloat(sbtcBalance) > 0) {
+  score += 25;
+  wins.push('Holding sBTC — Bitcoin on Stacks');
+} else {
+  issues.push({
+    text: 'No sBTC in wallet',
+    impact: -15,
+    fix: 'Bridge BTC to sBTC via Xverse for higher yields'
+  });
+}
+```
+
+### 3. Portfolio Size (20 points)
+
+<Note>
+  **Criteria:**
+  - 20 points: $1,000+ USD
+  - 10 points: $100-$999 USD  
+  - 0 points: < $100 USD
+  
+  **Why it matters:** Larger portfolios access better yields and absorb gas fees efficiently
+</Note>
+
+```javascript
+if (totalUSD >= 1000) {
+  score += 20;
+  wins.push('Strong portfolio size');
+} else if (totalUSD >= 100) {
+  score += 10;
+} else {
+  issues.push({
+    text: 'Small portfolio size',
+    impact: -10,
+    fix: 'Deposit more STX to access better yield tiers'
+  });
+}
+```
+
+### 4. Transaction Activity (15 points)
+
+<Note>
+  **Criteria:**
+  - 15 points: 10+ transactions
+  - 8 points: 3-9 transactions
+  - 0 points: < 3 transactions
+  
+  **Why it matters:** Active participants understand DeFi risks and opportunities
+</Note>
+
+```javascript
+if (txCount >= 10) {
+  score += 15;
+  wins.push('Active DeFi participant');
+} else if (txCount >= 3) {
+  score += 8;
+} else {
+  issues.push({
+    text: 'Low transaction activity',
+    impact: -10,
+    fix: 'Interact with at least one Stacks DeFi protocol'
+  });
+}
+```
+
+### 5. Diversification (20 points)
+
+<Note>
+  **Criteria:** Holds both STX AND sBTC  
+  **Why it matters:** Single-asset exposure = higher risk, diversification smooths volatility
+</Note>
+
+```javascript
+const hasSTX = parseFloat(stxBalance) > 0;
+const hasBTC = parseFloat(sbtcBalance) > 0;
+
+if (hasSTX && hasBTC) {
+  score += 20;
+  wins.push('Diversified across STX and sBTC');
+} else {
+  issues.push({
+    text: 'Single asset concentration',
+    impact: -15,
+    fix: 'Hold both STX and sBTC for better diversification'
+  });
+}
+```
+
+## Score Interpretation
+
+### Excellent (80-100)
+
+<CardGroup cols={1}>
+  <Card title="Your portfolio is in great shape!" icon="party-horn">
+    **Characteristics:**
+    - Diversified holdings (STX + sBTC)
+    - Strong portfolio size ($1,000+)
+    - Active DeFi participation (10+ txs)
+    - Optimized for yield
+    
+    **Next steps:** Maintain current strategy, consider advanced yield optimization
+  </Card>
+</CardGroup>
+
+### Good (60-79)
+
+<CardGroup cols={1}>
+  <Card title="Room to grow — check recommendations" icon="chart-line">
+    **Characteristics:**
+    - Has funds and some activity
+    - May lack diversification OR portfolio size
+    - Active but not fully optimized
+    
+    **Next steps:** Review issues list, add sBTC or increase position size
+  </Card>
+</CardGroup>
+
+### Fair (40-59)
+
+<CardGroup cols={1}>
+  <Card title="Take action to improve your score" icon="exclamation-triangle">
+    **Characteristics:**
+    - Small portfolio or single asset
+    - Limited transaction history
+    - Missing key optimization opportunities
+    
+    **Next steps:** Focus on top 2 issues, start with diversification
+  </Card>
+</CardGroup>
+
+### Needs Work (0-39)
+
+<CardGroup cols={1}>
+  <Card title="Multiple issues detected" icon="x-circle">
+    **Characteristics:**
+    - Empty or near-empty wallet
+    - No diversification
+    - No DeFi activity
+    
+    **Next steps:** Add funds, make first transaction, follow AI Copilot guidance
+  </Card>
+</CardGroup>
+
+## UI Components
+
+### Score Ring
+
+Large circular progress indicator:
+- **Ring color:** Changes based on score (green/orange/red)
+- **Animation:** Smooth fill from 0 to actual score over 1 second
+- **Label:** Shows score category (Excellent/Good/Fair/Needs Work)
+- **Glow effect:** Drop shadow matches ring color
+
+```javascript
+// SVG circle with strokeDasharray animation
+const circumference = 2 * Math.PI * 54;
+const filled = (score / 100) * circumference;
+
+<circle
+  cx="72" cy="72" r="54"
+  stroke={color}
+  strokeDasharray={`${filled} ${circumference}`}
+  transform="rotate(-90 72 72)"
+/>
+```
+
+### Issues List
+
+Red-tinted cards showing problems:
+
+```
+⚠️ Dragging Your Score Down
+
+┌─────────────────────────────────────┐
+│ No sBTC in wallet            -15pts │
+│ 💡 Bridge BTC to sBTC via Xverse   │
+│    for higher yields                │
+├─────────────────────────────────────┤
+│ Single asset concentration   -15pts │
+│ 💡 Hold both STX and sBTC for      │
+│    better diversification           │
+└─────────────────────────────────────┘
+```
+
+Each issue card shows:
+- **Bold problem statement** - Red text
+- **Impact points** - How many points you're losing
+- **Fix recommendation** - Specific action to take
+
+### Wins List
+
+Green-tinted cards highlighting strengths:
+
+```
+Wallet Summary
+
+✓ Wallet has active funds
+✓ Strong portfolio size
+✓ Active DeFi participant
+```
+
+## Code Reference
+
+Key implementation files:
+- **Page:** `src/pages/HealthScore.jsx` - Main UI and scoring logic
+- **Hook:** `src/hooks/usePortfolio.js` - Portfolio data fetching
+- **Algorithm:** `src/pages/HealthScore.jsx:7-49` - `calcHealthScore()` function
+- **Ring SVG:** `src/pages/HealthScore.jsx:51-102` - Animated score ring
+
+## Example Portfolios
+
+### Beginner (Score: 48 - Fair)
+
+**Portfolio:**
+- STX: 500 ($130 USD)
+- sBTC: 0
+- Transactions: 2
+
+**Issues:**
+- No sBTC (-15 pts)
+- Small portfolio size (-10 pts)
+- Low activity (-10 pts)
+- Single asset concentration (-15 pts)
+
+**Wins:**
+- Wallet has active funds (+20 pts)
+
+**Recommendations:**
+1. Bridge $50 BTC to sBTC (+25 pts)
+2. Make 2-3 more DeFi interactions (+8 pts)
+
+### Intermediate (Score: 73 - Good)
+
+**Portfolio:**
+- STX: 5,000 ($1,300 USD)
+- sBTC: 0.02 ($1,360 USD)
+- Transactions: 8
+
+**Issues:**
+- Low transaction activity (-7 pts)
+
+**Wins:**
+- Wallet has active funds (+20 pts)
+- Holding sBTC (+25 pts)
+- Strong portfolio size (+20 pts)
+- Diversified (+20 pts)
+
+**Recommendations:**
+1. Complete 2 more transactions (+7 pts) → 80 score (Excellent)
+
+### Advanced (Score: 100 - Excellent)
+
+**Portfolio:**
+- STX: 15,000 ($3,900 USD)
+- sBTC: 0.08 ($5,440 USD)
+- Transactions: 24
+
+**Issues:** None
+
+**Wins:**
+- All criteria met
+- Fully optimized portfolio
+
+## Improving Your Score
+
+<Steps>
+  <Step title="Review Issues List">
+    Focus on the top 1-2 issues with highest impact points. These will improve your score fastest.
+  </Step>
+  
+  <Step title="Prioritize Quick Wins">
+    Some fixes are easier than others:
+    - **Easiest:** Add sBTC (if you have BTC)
+    - **Medium:** Increase transaction count (use DeFi protocols)
+    - **Harder:** Grow portfolio size (requires capital)
+  </Step>
+  
+  <Step title="Use Other Tools">
+    Staxiq's other features help improve your score:
+    - **AI Copilot:** Get strategy for diversification
+    - **Yield Calculator:** Plan investments to reach $1,000+
+    - **Protocol Comparison:** Find protocols to interact with
+  </Step>
+  
+  <Step title="Re-check Score">
+    Score updates in real-time as your portfolio changes. No manual refresh needed.
+  </Step>
+</Steps>
+
+## Advanced Analysis
+
+### Score Distribution
+
+Typical score ranges for different user types:
+
+| User Type | Avg Score | Characteristics |
+|-----------|-----------|----------------|
+| New Users | 20-40 | Empty or minimal holdings |
+| Casual | 40-60 | Single asset, some activity |
+| Active | 60-80 | Diversified, regular transactions |
+| Power Users | 80-100 | Optimized, high activity |
+
+### Weight Justification
+
+Why each factor matters for DeFi health:
+
+1. **sBTC (25%)** - Highest weight because BTC on Stacks unlocks best yields
+2. **Active Funds (20%)** - Can't do DeFi without capital
+3. **Portfolio Size (20%)** - Economies of scale for gas fees
+4. **Diversification (20%)** - Risk management fundamentals
+5. **Activity (15%)** - Experience indicator, lower weight as it's not capital-dependent
+
+## Demo Mode
+
+Demo health score shows realistic "Good" rating (73/100):
+
+```javascript
+const DEMO_HEALTH = {
+  score: 73,
+  issues: [
+    {
+      text: 'Could increase transaction activity',
+      impact: -7,
+      fix: 'Try interacting with 2-3 more protocols'
+    }
+  ],
+  wins: [
+    'Wallet has active funds',
+    'Holding sBTC — Bitcoin on Stacks',
+    'Strong portfolio size',
+    'Diversified across STX and sBTC'
+  ]
+};
+```
+
+## Troubleshooting
+
+**Score seems too low:**
+- Check if sBTC is showing in portfolio (worth 25 points)
+- Verify transaction history loaded (check Portfolio page)
+- Demo mode uses fixed score—connect real wallet
+
+**Score not updating:**
+- Portfolio data refreshes every 30 seconds
+- Recent transactions may not appear immediately on-chain
+- Hard refresh page (Ctrl+Shift+R)
+
+**No recommendations shown:**
+- Score = 100 (no issues to fix)
+- Check "Wallet Summary" section for your wins
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Monthly Check-ins" icon="calendar-days">
+    Review health score monthly to track portfolio optimization progress
+  </Card>
+  <Card title="Fix Highest Impact" icon="arrow-up-right-dots">
+    Start with issues showing -15 or -20 impact for fastest improvement
+  </Card>
+  <Card title="Balance Growth" icon="scale-balanced">
+    Don't chase 100 score—sometimes 80+ is optimal for your risk profile
+  </Card>
+  <Card title="Use AI Guidance" icon="robot">
+    AI Copilot factors in health score issues when generating strategies
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Copilot" icon="robot" href="/features/ai-copilot">
+    Get personalized strategy to improve your health score
+  </Card>
+  <Card title="Portfolio Tracking" icon="chart-line" href="/features/portfolio-tracking">
+    Monitor holdings as you implement recommendations
+  </Card>
+</CardGroup>

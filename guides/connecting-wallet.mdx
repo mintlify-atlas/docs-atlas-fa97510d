@@ -1,0 +1,234 @@
+---
+title: Connecting Your Wallet
+description: Learn how to connect your Stacks wallet to Staxiq and start managing your Bitcoin DeFi portfolio
+---
+
+## Overview
+
+Connecting your wallet is the first step to accessing Staxiq's Bitcoin DeFi analytics and AI-powered strategies. This guide walks you through connecting supported Stacks wallets and troubleshooting common issues.
+
+<Note>
+Staxiq supports all Stacks-compatible wallets including Leather Wallet (formerly Hiro Wallet), Xverse, and Asigna.
+</Note>
+
+## Prerequisites
+
+Before connecting, make sure you have:
+
+- A Stacks wallet installed (browser extension or mobile app)
+- Some STX or sBTC in your wallet (even small amounts work)
+- Access to Stacks mainnet or testnet
+
+## Connecting Your Wallet
+
+<Steps>
+  <Step title="Open Staxiq Dashboard">
+    Navigate to the Staxiq dashboard. You'll see a **Connect Wallet** button in the top navigation bar.
+    
+    The button displays prominently with an orange gradient:
+    
+    ```jsx
+    <button className="bg-orange-500 hover:bg-orange-600 text-white">
+      Connect Wallet
+    </button>
+    ```
+  </Step>
+
+  <Step title="Click Connect Wallet">
+    Click the **Connect Wallet** button. This triggers the wallet connection flow.
+    
+    Behind the scenes, Staxiq calls the `connectWallet` function:
+    
+    ```javascript
+    // Initiates connection request to your wallet
+    connectWallet()
+    ```
+    
+    You'll see a loading state while the connection is being established:
+    
+    ```jsx
+    <span className="flex items-center gap-2">
+      <svg className="animate-spin h-4 w-4" />
+      Connecting...
+    </span>
+    ```
+  </Step>
+
+  <Step title="Approve Connection in Wallet">
+    Your wallet extension will prompt you to approve the connection. Review the permissions and click **Approve** or **Connect**.
+    
+    <Tip>
+    Staxiq only requests read access to your wallet. It cannot execute transactions without your explicit approval.
+    </Tip>
+  </Step>
+
+  <Step title="Verify Connection">
+    Once connected, you'll see your shortened wallet address displayed:
+    
+    ```jsx
+    {shortAddress(address)}
+    // Example: SP2J6...K5Z8
+    ```
+    
+    The address format shows the first 5 characters and last 4 characters:
+    
+    ```javascript
+    function shortAddress(addr) {
+      return `${addr.slice(0, 5)}...${addr.slice(-4)}`;
+    }
+    ```
+  </Step>
+</Steps>
+
+## What Happens After Connection
+
+Once your wallet is connected, Staxiq automatically:
+
+<CardGroup cols={2}>
+  <Card title="Fetches Portfolio Data" icon="wallet">
+    Loads your STX and sBTC balances from the Stacks blockchain
+  </Card>
+  
+  <Card title="Analyzes Transactions" icon="chart-line">
+    Reviews your transaction history to understand your DeFi activity
+  </Card>
+  
+  <Card title="Detects Protocol Positions" icon="layer-group">
+    Identifies active positions in protocols like StackingDAO, ALEX, and Zest
+  </Card>
+  
+  <Card title="Enables AI Copilot" icon="robot">
+    Unlocks personalized strategy recommendations based on your portfolio
+  </Card>
+</CardGroup>
+
+### Portfolio Data Fetching
+
+Staxiq uses the `usePortfolio` hook to fetch your data:
+
+```javascript
+export function usePortfolio(address) {
+  const [portfolio, setPortfolio] = useState({
+    stxBalance: '--',
+    sbtcBalance: '--',
+    totalUSD: '--',
+    txHistory: [],
+    stxPrice: 0,
+  });
+  
+  useEffect(() => {
+    async function fetchPortfolio() {
+      const data = await getFullPortfolio(address);
+      setPortfolio(data);
+    }
+    
+    fetchPortfolio();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchPortfolio, 30000);
+    return () => clearInterval(interval);
+  }, [address]);
+  
+  return { portfolio, loading, error };
+}
+```
+
+<Note>
+Your portfolio data refreshes automatically every 30 seconds to show real-time balances.
+</Note>
+
+## Disconnecting Your Wallet
+
+To disconnect your wallet:
+
+<Steps>
+  <Step title="Click Disconnect Icon">
+    Click the disconnect icon (logout symbol) next to your address.
+  </Step>
+  
+  <Step title="Confirm Disconnection">
+    Your wallet will be disconnected and the dashboard will return to the connection prompt.
+  </Step>
+</Steps>
+
+```jsx
+<button
+  onClick={disconnectWallet}
+  className="text-[#4a5a7a] hover:text-red-400"
+  title="Disconnect Wallet"
+>
+  <svg className="w-4 h-4" />
+</button>
+```
+
+## Troubleshooting
+
+### Wallet Extension Not Detected
+
+<Warning>
+If Staxiq doesn't detect your wallet, make sure:
+- Your wallet extension is installed and enabled
+- You're not in private/incognito mode (some wallets don't work in private browsing)
+- No other dApp is currently using the wallet connection
+</Warning>
+
+**Solution**: Refresh the page and try connecting again. If issues persist, try disabling and re-enabling your wallet extension.
+
+### Connection Fails or Times Out
+
+If the connection times out:
+
+1. Check that your wallet is unlocked
+2. Verify you're on the correct network (mainnet/testnet)
+3. Clear your browser cache and try again
+4. Try a different wallet if available
+
+### Wrong Network Connected
+
+Staxiq works on both Stacks mainnet and testnet. Make sure your wallet is connected to the network you intend to use.
+
+<Tip>
+Testnet is useful for exploring Staxiq features without risking real funds.
+</Tip>
+
+### Portfolio Shows Zero Balance
+
+If your wallet connects but shows zero balances:
+
+- Wait 30 seconds for the first data refresh
+- Verify your wallet actually has STX/sBTC on the connected network
+- Check the browser console for API errors
+- The Hiro API may be experiencing delays
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Verify Domain" icon="shield-check">
+    Always check you're on the official Staxiq domain before connecting
+  </Card>
+  
+  <Card title="Review Permissions" icon="eye">
+    Only approve read-access permissions during connection
+  </Card>
+  
+  <Card title="Keep Wallet Updated" icon="arrow-up">
+    Use the latest version of your wallet extension
+  </Card>
+  
+  <Card title="Never Share Keys" icon="lock">
+    Staxiq will never ask for your private keys or seed phrase
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that your wallet is connected, you can:
+
+- [Analyze your portfolio](/guides/analyzing-portfolio) to understand your holdings
+- [Use the AI Copilot](/guides/using-ai-copilot) to get personalized DeFi strategies
+- [Compare protocols](/guides/comparing-protocols) to find the best yields
+
+## Related Resources
+
+- [API Reference: Authentication](/api/authentication)
+- [Understanding Risk Profiles](/guides/understanding-risk)
+- [API Reference: Wallet Hook](/api/hooks/use-wallet)

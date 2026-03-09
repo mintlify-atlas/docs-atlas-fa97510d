@@ -1,0 +1,438 @@
+---
+title: 'Contract Deployment'
+description: 'Deploy Staxiq smart contracts to Stacks testnet and mainnet'
+icon: 'rocket'
+---
+
+## Overview
+
+Staxiq smart contracts are deployed using **Clarinet**, the official Stacks smart contract development tool. This guide covers local development, testnet deployment, and mainnet deployment.
+
+<Note>
+  Clarity contracts are **immutable** after deployment. Thoroughly test on testnet before deploying to mainnet.
+</Note>
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install Clarinet">
+    Install Clarinet CLI:
+    
+    ```bash
+    # macOS/Linux
+    curl -L https://github.com/hirosystems/clarinet/releases/latest/download/clarinet-linux-x64.tar.gz | tar xz
+    sudo mv clarinet /usr/local/bin/
+    
+    # Or via Homebrew (macOS)
+    brew install clarinet
+    
+    # Windows
+    scoop install clarinet
+    ```
+    
+    Verify installation:
+    ```bash
+    clarinet --version
+    ```
+  </Step>
+  
+  <Step title="Get Testnet STX">
+    For testnet deployment, get free STX from the [Stacks Faucet](https://explorer.hiro.so/sandbox/faucet?chain=testnet)
+  </Step>
+  
+  <Step title="Prepare Wallet">
+    Export your wallet's private key or mnemonic phrase for deployment
+  </Step>
+</Steps>
+
+## Project Structure
+
+The Staxiq contracts repository has the following structure:
+
+```bash
+staxiq-contracts/
+├── Clarinet.toml          # Project configuration
+├── contracts/
+│   └── staxiq-user-profile.clar  # Main contract
+├── tests/
+│   └── staxiq-user-profile.test.ts  # Contract tests
+├── settings/
+│   ├── Devnet.toml        # Local devnet config
+│   ├── Testnet.toml       # Testnet config
+│   └── Mainnet.toml       # Mainnet config
+├── deployments/           # Deployment plans
+└── package.json
+```
+
+## Clarinet Configuration
+
+The main configuration file defines the contract:
+
+```toml Clarinet.toml
+[project]
+name = 'staxiq-contracts'
+description = ''
+authors = []
+telemetry = false
+cache_dir = '.\.cache'
+requirements = []
+
+[contracts.staxiq-user-profile]
+path = 'contracts/staxiq-user-profile.clar'
+clarity_version = 4
+epoch = 'latest'
+
+[repl.analysis]
+passes = [
+    'call_checker',
+    'check_checker',
+]
+```
+
+<ParamField path="clarity_version" type="number">
+  Staxiq uses Clarity 4 (latest version as of 2026)
+</ParamField>
+
+<ParamField path="epoch" type="string">
+  Set to `'latest'` to use the most recent Stacks epoch features
+</ParamField>
+
+## Local Development
+
+### Start Clarinet Console
+
+Test contract functions interactively:
+
+```bash
+clarinet console
+```
+
+In the console, you can call contract functions:
+
+```clarity
+;; Set risk profile
+(contract-call? .staxiq-user-profile set-risk-profile u2)
+;; Returns: (ok u2)
+
+;; Get user profile
+(contract-call? .staxiq-user-profile get-user-profile tx-sender)
+;; Returns: (ok { risk-level: u2, created-at: u1, updated-at: u1, strategy-count: u0 })
+
+;; Save strategy
+(contract-call? .staxiq-user-profile save-strategy
+  "a1b2c3d4e5f6789012345678901234567890123456789012345678901234"
+  "ALEX")
+;; Returns: (ok u1)
+```
+
+### Run Tests
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+With coverage and cost analysis:
+
+```bash
+npm run test:report
+```
+
+Watch mode for development:
+
+```bash
+npm run test:watch
+```
+
+<Tip>
+  Always run tests before deployment to catch bugs early.
+</Tip>
+
+---
+
+## Testnet Deployment
+
+### 1. Configure Testnet Settings
+
+Create or edit `settings/Testnet.toml`:
+
+```toml settings/Testnet.toml
+[network]
+name = "testnet"
+
+[accounts.deployer]
+mnemonic = "your twelve word seed phrase here..."
+# Or use keychain:
+# keychain = "~/.stacks-cli/testnet-deployer.json"
+```
+
+<Warning>
+  Never commit your mnemonic or private key to version control. Use environment variables or a secure keychain.
+</Warning>
+
+### 2. Check Contract Validity
+
+Validate your contract before deploying:
+
+```bash
+clarinet check
+```
+
+This runs static analysis and checks for common issues.
+
+### 3. Deploy to Testnet
+
+Deploy the contract:
+
+```bash
+clarinet deployments generate --testnet
+clarinet deployments apply -p deployments/default.testnet-plan.yaml
+```
+
+Or use the integrated deployment command:
+
+```bash
+clarinet integrate --testnet
+```
+
+### 4. Verify Deployment
+
+After deployment, you'll see output like:
+
+```
+✅ Contract deployed successfully!
+Contract ID: ST9ZZEP9M6VZ9YJA0P69H313CRPV0HQ1ZNPVS8NZ.staxiq-user-profile
+Transaction: 0xabc123...
+```
+
+Verify on [Testnet Explorer](https://explorer.hiro.so/?chain=testnet):
+
+```
+https://explorer.hiro.so/txid/0xabc123...?chain=testnet
+```
+
+---
+
+## Mainnet Deployment
+
+<Warning>
+  Mainnet deployment is **permanent and immutable**. Triple-check everything before deploying.
+</Warning>
+
+### Pre-Deployment Checklist
+
+<Steps>
+  <Step title="Test Thoroughly">
+    - [ ] All unit tests pass
+    - [ ] Integration tests on testnet successful
+    - [ ] Security audit completed (for high-value contracts)
+    - [ ] Gas costs estimated and acceptable
+  </Step>
+  
+  <Step title="Prepare Mainnet Wallet">
+    - [ ] Mainnet wallet has sufficient STX for deployment fees
+    - [ ] Private key/mnemonic securely stored
+    - [ ] Deployment address verified
+  </Step>
+  
+  <Step title="Documentation Ready">
+    - [ ] Contract functions documented
+    - [ ] Integration guide complete
+    - [ ] User documentation prepared
+  </Step>
+</Steps>
+
+### 1. Configure Mainnet Settings
+
+```toml settings/Mainnet.toml
+[network]
+name = "mainnet"
+
+[accounts.deployer]
+# Use keychain for mainnet (more secure)
+keychain = "~/.stacks-cli/mainnet-deployer.json"
+```
+
+### 2. Generate Deployment Plan
+
+```bash
+clarinet deployments generate --mainnet
+```
+
+Review the generated plan in `deployments/default.mainnet-plan.yaml`:
+
+```yaml
+---
+id: 0
+name: Default
+network: mainnet
+stacks-node: https://api.hiro.so
+contracts:
+  staxiq-user-profile:
+    path: contracts/staxiq-user-profile.clar
+    cost:
+      execute: 50000
+      read_count: 0
+      read_length: 0
+      runtime: 10000
+      write_count: 3
+      write_length: 150
+```
+
+<Note>
+  Review the estimated costs carefully. Deployment fees depend on contract size and complexity.
+</Note>
+
+### 3. Deploy to Mainnet
+
+```bash
+clarinet deployments apply -p deployments/default.mainnet-plan.yaml
+```
+
+Confirm the deployment:
+
+```
+⚠️  You are about to deploy to MAINNET
+Contract: staxiq-user-profile
+Deployer: SP...
+Estimated cost: ~0.5 STX
+
+Continue? (y/n): y
+```
+
+### 4. Save Deployment Info
+
+After successful deployment, save the contract details:
+
+```json deployments/mainnet-deployment.json
+{
+  "contract_id": "SP1234567890ABCDEF.staxiq-user-profile",
+  "deployer": "SP1234567890ABCDEF",
+  "transaction_id": "0xabc123...",
+  "block_height": 150000,
+  "deployed_at": "2026-03-09T10:30:00Z"
+}
+```
+
+### 5. Update Frontend Configuration
+
+Update your frontend to use the mainnet contract address:
+
+```javascript src/services/contractService.js
+// Update CONTRACT_ADDRESS to mainnet deployment
+const CONTRACT_ADDRESS = 'SP1234567890ABCDEF';
+const CONTRACT_NAME = 'staxiq-user-profile';
+
+function getNetwork() {
+    return window.location.hostname === 'staxiq.ai'
+        ? STACKS_MAINNET
+        : STACKS_TESTNET;
+}
+```
+
+---
+
+## Deployment Costs
+
+Estimated costs for deploying `staxiq-user-profile.clar`:
+
+| Network | Estimated Cost | Confirmation Time |
+|---------|---------------|-------------------|
+| **Devnet** | Free | Instant |
+| **Testnet** | Free (use faucet) | ~10 minutes |
+| **Mainnet** | ~0.3-0.8 STX | ~10 minutes |
+
+<Note>
+  Actual costs vary based on network congestion and contract complexity.
+</Note>
+
+## Post-Deployment
+
+### Verify Contract on Explorer
+
+Check your deployed contract:
+
+<CardGroup cols={2}>
+  <Card title="Testnet Explorer" icon="magnifying-glass" href="https://explorer.hiro.so/?chain=testnet">
+    View testnet deployments and transactions
+  </Card>
+  <Card title="Mainnet Explorer" icon="magnifying-glass" href="https://explorer.hiro.so/?chain=mainnet">
+    View mainnet deployments and transactions
+  </Card>
+</CardGroup>
+
+### Update Documentation
+
+After deployment:
+
+1. Update contract addresses in documentation
+2. Publish API reference with deployed contract ID
+3. Update integration guides with mainnet examples
+4. Announce deployment to users
+
+### Monitor Contract Usage
+
+Track contract interactions:
+
+```bash
+# Get contract info
+curl https://api.mainnet.hiro.so/v2/contracts/interface/SP.../staxiq-user-profile
+
+# Get recent transactions
+curl https://api.mainnet.hiro.so/extended/v1/address/SP.../transactions
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Error: Insufficient funds">
+    **Solution**: Ensure your deployer wallet has enough STX for deployment fees. Get testnet STX from the faucet.
+  </Accordion>
+  
+  <Accordion title="Error: Contract already exists">
+    **Solution**: Clarity contracts are immutable. You cannot redeploy with the same name. Use a different contract name or deployer address.
+  </Accordion>
+  
+  <Accordion title="Error: Invalid Clarity syntax">
+    **Solution**: Run `clarinet check` to validate your contract syntax before deployment.
+  </Accordion>
+  
+  <Accordion title="Error: Transaction timeout">
+    **Solution**: Network congestion can delay transactions. Wait 15-20 minutes and check the explorer. Increase the fee for faster confirmation.
+  </Accordion>
+</AccordionGroup>
+
+### Getting Help
+
+<CardGroup cols={2}>
+  <Card title="Clarinet Docs" icon="book" href="https://docs.hiro.so/clarinet">
+    Official Clarinet documentation
+  </Card>
+  <Card title="Stacks Discord" icon="discord" href="https://discord.gg/stacks">
+    Get help from the Stacks community
+  </Card>
+  <Card title="Hiro Support" icon="life-ring" href="https://www.hiro.so/support">
+    Contact Hiro for technical support
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/hirosystems/clarinet/issues">
+    Report bugs or request features
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Testing" icon="flask" href="/contracts/testing">
+    Learn how to test contracts before deployment
+  </Card>
+  <Card title="Integration" icon="code" href="/contracts/user-profile/integration">
+    Integrate deployed contracts into your frontend
+  </Card>
+</CardGroup>

@@ -1,122 +1,134 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Staxiq",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#F7931A",
+    "light": "#3B82F6",
+    "dark": "#2563EB"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "type": "github",
+      "href": "https://github.com/natureloved/Staxiq"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/natureloved/Staxiq"
     }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "wallet-setup"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/portfolio-tracking",
+              "features/ai-copilot",
+              "features/yield-calculator",
+              "features/stacking-tracker",
+              "features/health-score",
+              "features/protocol-comparison"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/connecting-wallet",
+              "guides/analyzing-portfolio",
+              "guides/using-ai-copilot",
+              "guides/comparing-protocols",
+              "guides/understanding-risk"
+            ]
+          },
+          {
+            "group": "Protocols",
+            "pages": [
+              "protocols/overview",
+              "protocols/zest",
+              "protocols/alex",
+              "protocols/bitflow",
+              "protocols/hermetica",
+              "protocols/stackingdao",
+              "protocols/velar",
+              "protocols/granite"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Smart Contracts",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "contracts/introduction",
+              "contracts/architecture"
+            ]
+          },
+          {
+            "group": "User Profile Contract",
+            "pages": [
+              "contracts/user-profile/overview",
+              "contracts/user-profile/functions",
+              "contracts/user-profile/integration"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "contracts/deployment",
+              "contracts/testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "api/ai-service",
+              "api/contract-service",
+              "api/stacks-api",
+              "api/protocol-data"
+            ]
+          },
+          {
+            "group": "Hooks",
+            "pages": [
+              "api/hooks/use-wallet",
+              "api/hooks/use-ai-advisor",
+              "api/hooks/use-portfolio",
+              "api/hooks/use-protocols"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

@@ -1,0 +1,694 @@
+---
+title: 'Contract Testing'
+description: 'Test Staxiq smart contracts using Vitest and Clarinet SDK'
+icon: 'flask'
+---
+
+## Overview
+
+Staxiq smart contracts are tested using **Vitest** with the **Clarinet SDK**, providing a fast, type-safe testing environment for Clarity contracts.
+
+<CardGroup cols={2}>
+  <Card title="Unit Tests" icon="vial">
+    Test individual contract functions in isolation
+  </Card>
+  <Card title="Integration Tests" icon="puzzle-piece">
+    Test complete user workflows and interactions
+  </Card>
+  <Card title="Cost Analysis" icon="dollar-sign">
+    Measure gas costs for contract operations
+  </Card>
+  <Card title="Coverage Reports" icon="chart-line">
+    Track which contract paths are tested
+  </Card>
+</CardGroup>
+
+## Test Setup
+
+### Dependencies
+
+The test environment uses:
+
+```json package.json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:report": "vitest run -- --coverage --costs",
+    "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\""
+  },
+  "dependencies": {
+    "@stacks/clarinet-sdk": "^3.9.0",
+    "@stacks/transactions": "^7.2.0",
+    "@types/node": "^24.4.0",
+    "chokidar-cli": "^3.0.0",
+    "vitest": "^4.0.7",
+    "vitest-environment-clarinet": "^3.0.0"
+  }
+}
+```
+
+### Vitest Configuration
+
+```typescript vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'clarinet',
+    singleThread: true,
+  },
+});
+```
+
+<Note>
+  The `clarinet` environment provides a simulated Stacks blockchain for testing.
+</Note>
+
+---
+
+## Running Tests
+
+### Basic Test Run
+
+Run all tests once:
+
+```bash
+npm test
+```
+
+### Detailed Test Report
+
+Run with coverage and cost analysis:
+
+```bash
+npm run test:report
+```
+
+Output includes:
+- Test results
+- Contract execution costs
+- Code coverage percentage
+- Gas usage per function
+
+### Watch Mode
+
+Auto-run tests when files change:
+
+```bash
+npm run test:watch
+```
+
+<Tip>
+  Use watch mode during development for instant feedback on code changes.
+</Tip>
+
+---
+
+## Writing Tests
+
+### Test Structure
+
+The test file structure:
+
+```typescript tests/staxiq-user-profile.test.ts
+import { describe, expect, it } from "vitest";
+
+const accounts = simnet.getAccounts();
+const address1 = accounts.get("wallet_1")!;
+
+describe("staxiq-user-profile", () => {
+  it("ensures simnet is well initialised", () => {
+    expect(simnet.blockHeight).toBeDefined();
+  });
+});
+```
+
+### Example Tests
+
+Here are comprehensive tests for the user profile contract:
+
+<CodeGroup>
+```typescript Risk Profile Tests
+import { describe, expect, it, beforeEach } from "vitest";
+import { Cl } from "@stacks/transactions";
+
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const user1 = accounts.get("wallet_1")!;
+const user2 = accounts.get("wallet_2")!;
+
+describe("set-risk-profile", () => {
+  it("should set Conservative risk profile", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(1)],
+      user1
+    );
+    
+    expect(result).toBeOk(Cl.uint(1));
+  });
+
+  it("should set Balanced risk profile", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+    
+    expect(result).toBeOk(Cl.uint(2));
+  });
+
+  it("should set Aggressive risk profile", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(3)],
+      user1
+    );
+    
+    expect(result).toBeOk(Cl.uint(3));
+  });
+
+  it("should reject invalid risk level (0)", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(0)],
+      user1
+    );
+    
+    expect(result).toBeErr(Cl.uint(400)); // ERR-INVALID-RISK
+  });
+
+  it("should reject invalid risk level (4)", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(4)],
+      user1
+    );
+    
+    expect(result).toBeErr(Cl.uint(400));
+  });
+
+  it("should update existing profile", () => {
+    // Set initial profile
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(1)],
+      user1
+    );
+
+    // Update to different risk level
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(3)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.uint(3));
+
+    // Verify profile updated
+    const { result: profile } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-user-profile",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(profile).toBeOk(
+      Cl.tuple({
+        'risk-level': Cl.uint(3),
+        'created-at': Cl.uint(expect.any(Number)),
+        'updated-at': Cl.uint(expect.any(Number)),
+        'strategy-count': Cl.uint(0)
+      })
+    );
+  });
+});
+```
+
+```typescript Strategy Tests
+describe("save-strategy", () => {
+  beforeEach(() => {
+    // Ensure user has a profile before each test
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+  });
+
+  it("should save strategy successfully", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("a1b2c3d4e5f6789012345678901234567890123456789012345678901234"),
+        Cl.stringAscii("ALEX")
+      ],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.uint(1)); // First strategy ID
+  });
+
+  it("should increment strategy ID for multiple strategies", () => {
+    // Save first strategy
+    const { result: result1 } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("hash1111111111111111111111111111111111111111111111111111111111"),
+        Cl.stringAscii("ALEX")
+      ],
+      user1
+    );
+    expect(result1).toBeOk(Cl.uint(1));
+
+    // Save second strategy
+    const { result: result2 } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("hash2222222222222222222222222222222222222222222222222222222222"),
+        Cl.stringAscii("Velar")
+      ],
+      user1
+    );
+    expect(result2).toBeOk(Cl.uint(2));
+
+    // Save third strategy
+    const { result: result3 } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("hash3333333333333333333333333333333333333333333333333333333333"),
+        Cl.stringAscii("StackSwap")
+      ],
+      user1
+    );
+    expect(result3).toBeOk(Cl.uint(3));
+  });
+
+  it("should fail if user has no profile", () => {
+    const { result } = simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("a1b2c3d4e5f6789012345678901234567890123456789012345678901234"),
+        Cl.stringAscii("ALEX")
+      ],
+      user2 // user2 has no profile
+    );
+
+    expect(result).toBeErr(Cl.uint(404)); // ERR-NOT-FOUND
+  });
+
+  it("should store strategy with correct details", () => {
+    // Save strategy
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "save-strategy",
+      [
+        Cl.stringAscii("abc123def456"),
+        Cl.stringAscii("ALEX")
+      ],
+      user1
+    );
+
+    // Retrieve strategy
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-strategy",
+      [Cl.principal(user1), Cl.uint(1)],
+      user1
+    );
+
+    expect(result).toBeOk(
+      Cl.tuple({
+        'risk-level': Cl.uint(2),
+        'strategy-hash': Cl.stringAscii("abc123def456"),
+        'protocol': Cl.stringAscii("ALEX"),
+        'timestamp': Cl.uint(expect.any(Number))
+      })
+    );
+  });
+});
+```
+
+```typescript Read-Only Function Tests
+describe("get-user-profile", () => {
+  it("should return profile for user with profile", () => {
+    // Create profile
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+
+    // Get profile
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-user-profile",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(
+      Cl.tuple({
+        'risk-level': Cl.uint(2),
+        'created-at': Cl.uint(expect.any(Number)),
+        'updated-at': Cl.uint(expect.any(Number)),
+        'strategy-count': Cl.uint(0)
+      })
+    );
+  });
+
+  it("should return ERR-NOT-FOUND for user without profile", () => {
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-user-profile",
+      [Cl.principal(user2)],
+      user2
+    );
+
+    expect(result).toBeErr(Cl.uint(404));
+  });
+});
+
+describe("has-profile", () => {
+  it("should return true for user with profile", () => {
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(1)],
+      user1
+    );
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "has-profile",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeBool(true);
+  });
+
+  it("should return false for user without profile", () => {
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "has-profile",
+      [Cl.principal(user2)],
+      user2
+    );
+
+    expect(result).toBeBool(false);
+  });
+});
+
+describe("get-strategy-count", () => {
+  it("should return 0 for user with no strategies", () => {
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-strategy-count",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.uint(0));
+  });
+
+  it("should return correct count after saving strategies", () => {
+    // Setup
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+
+    // Save 3 strategies
+    for (let i = 1; i <= 3; i++) {
+      simnet.callPublicFn(
+        "staxiq-user-profile",
+        "save-strategy",
+        [
+          Cl.stringAscii(`hash${i}`.padEnd(64, '0')),
+          Cl.stringAscii("ALEX")
+        ],
+        user1
+      );
+    }
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-strategy-count",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.uint(3));
+  });
+});
+
+describe("get-risk-label", () => {
+  it("should return 'Conservative' for risk level 1", () => {
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(1)],
+      user1
+    );
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-risk-label",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.stringAscii("Conservative"));
+  });
+
+  it("should return 'Balanced' for risk level 2", () => {
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(2)],
+      user1
+    );
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-risk-label",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.stringAscii("Balanced"));
+  });
+
+  it("should return 'Aggressive' for risk level 3", () => {
+    simnet.callPublicFn(
+      "staxiq-user-profile",
+      "set-risk-profile",
+      [Cl.uint(3)],
+      user1
+    );
+
+    const { result } = simnet.callReadOnlyFn(
+      "staxiq-user-profile",
+      "get-risk-label",
+      [Cl.principal(user1)],
+      user1
+    );
+
+    expect(result).toBeOk(Cl.stringAscii("Aggressive"));
+  });
+});
+```
+</CodeGroup>
+
+---
+
+## Test Coverage
+
+Generate a coverage report:
+
+```bash
+npm run test:report -- --coverage
+```
+
+Output shows:
+
+```
+📊 Coverage Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File                      | Lines | Branches
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+staxiq-user-profile.clar  | 98%   | 95%
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+<Tip>
+  Aim for >90% coverage to ensure contract reliability.
+</Tip>
+
+---
+
+## Gas Cost Analysis
+
+Vitest can report execution costs:
+
+```bash
+npm run test:report -- --costs
+```
+
+Example output:
+
+```
+💰 Gas Cost Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Function              | Execute | Read | Write
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+set-risk-profile      | 5,200   | 150  | 300
+save-strategy         | 7,500   | 200  | 450
+get-user-profile      | 1,000   | 150  | 0
+get-strategy          | 1,200   | 180  | 0
+get-strategy-count    | 800     | 100  | 0
+has-profile           | 600     | 100  | 0
+get-risk-label        | 1,100   | 150  | 0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+<Note>
+  Lower costs mean cheaper transactions for users. Optimize expensive functions if possible.
+</Note>
+
+---
+
+## Best Practices
+
+### 1. Test All Paths
+
+Test both success and failure cases:
+
+```typescript
+// ✅ Good - tests both cases
+it("should accept valid risk level", () => { /* ... */ });
+it("should reject invalid risk level", () => { /* ... */ });
+
+// ❌ Bad - only tests success
+it("should set risk profile", () => { /* ... */ });
+```
+
+### 2. Use Descriptive Test Names
+
+```typescript
+// ✅ Good
+it("should return ERR-NOT-FOUND when user has no profile", () => { /* ... */ });
+
+// ❌ Bad
+it("test get profile", () => { /* ... */ });
+```
+
+### 3. Setup and Teardown
+
+Use `beforeEach` for common setup:
+
+```typescript
+beforeEach(() => {
+  // Reset state or setup common conditions
+  simnet.callPublicFn(
+    "staxiq-user-profile",
+    "set-risk-profile",
+    [Cl.uint(2)],
+    user1
+  );
+});
+```
+
+### 4. Test Edge Cases
+
+- Boundary values (0, max uint)
+- Empty strings
+- Multiple users simultaneously
+- Sequential operations
+
+---
+
+## Continuous Integration
+
+Add tests to your CI/CD pipeline:
+
+```yaml .github/workflows/test.yml
+name: Contract Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm test
+      - run: npm run test:report
+```
+
+---
+
+## Debugging Tests
+
+### Log Contract State
+
+```typescript
+const { result } = simnet.callPublicFn(/* ... */);
+console.log('Result:', result);
+console.log('Block height:', simnet.blockHeight);
+console.log('Accounts:', simnet.getAccounts());
+```
+
+### Inspect Transaction Events
+
+```typescript
+const { events } = simnet.callPublicFn(/* ... */);
+console.log('Events:', events);
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment" icon="rocket" href="/contracts/deployment">
+    Deploy tested contracts to testnet or mainnet
+  </Card>
+  <Card title="Integration" icon="code" href="/contracts/user-profile/integration">
+    Integrate contracts into your frontend
+  </Card>
+  <Card title="Vitest Docs" icon="book" href="https://vitest.dev/">
+    Learn more about Vitest testing framework
+  </Card>
+  <Card title="Clarinet SDK" icon="toolbox" href="https://docs.hiro.so/stacks/clarinet-js-sdk">
+    Explore Clarinet SDK documentation
+  </Card>
+</CardGroup>

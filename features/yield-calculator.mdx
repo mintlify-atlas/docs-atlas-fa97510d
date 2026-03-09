@@ -1,0 +1,322 @@
+---
+title: 'Yield Calculator'
+description: 'Simulate returns across every Stacks DeFi protocol before committing funds'
+icon: 'calculator'
+---
+
+## Overview
+
+The Yield Calculator lets you model potential returns before investing. Input any amount of STX or sBTC, select a protocol, and see projected earnings across daily, weekly, monthly, and yearly timeframes with compound growth visualization.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Asset Support" icon="coins">
+    Calculate yields for both STX and sBTC holdings
+  </Card>
+  <Card title="Live Protocol Data" icon="signal">
+    APY rates pulled from DefiLlama every 5 minutes
+  </Card>
+  <Card title="Compound Modeling" icon="repeat">
+    Toggle compounding to see exponential growth over 12 months
+  </Card>
+  <Card title="Break-Even Analysis" icon="clock">
+    See how long until your investment grows 10%
+  </Card>
+</CardGroup>
+
+## How It Works
+
+### Input Configuration
+
+<Steps>
+  <Step title="Set Investment Amount">
+    Enter the amount you want to invest:
+    ```javascript
+    amount: '1000' // String value for input control
+    ```
+    
+    Switch between **STX** and **sBTC** for automatic USD conversion:
+    - STX: Multiplied by current STX price (~$0.26)
+    - sBTC: Multiplied by Bitcoin price (~$68,000)
+  </Step>
+  
+  <Step title="Select Protocol">
+    Choose from all Stacks DeFi protocols:
+    - **StackingDAO** - 9.5% APY (Low Risk)
+    - **Velar Finance** - 12% APY (Medium Risk)
+    - **Zest Protocol** - 15% APY (High Risk)
+    - **ALEX** - 10% APY (Medium Risk)
+    - And more...
+    
+    Each protocol shows:
+    - Logo and name
+    - Risk badge (Low/Medium/High)
+    - Current APY from live data
+  </Step>
+  
+  <Step title="Toggle Compounding">
+    Enable **Compound Rewards** to model reinvesting earnings:
+    - **ON**: Daily compound growth (365x per year)
+    - **OFF**: Simple interest calculation
+  </Step>
+</Steps>
+
+## Calculation Logic
+
+### Return Projections
+
+The calculator uses precise compound interest formulas:
+
+```javascript
+function calcReturns(amount, apy, compound = true) {
+  const r = apy / 100;
+  
+  // Compound: A = P(1 + r/n)^(nt) - P
+  // Simple: A = P * r * t
+  
+  const calc = (t) => compound
+    ? amount * Math.pow(1 + r / 365, 365 * t) - amount
+    : amount * r * t;
+    
+  return {
+    daily: calc(1 / 365),
+    weekly: calc(7 / 365),
+    monthly: calc(1 / 12),
+    yearly: calc(1)
+  };
+}
+```
+
+### Break-Even Time
+
+Calculates months to reach 10% growth:
+
+```javascript
+const breakEvenMonths = Math.ceil(
+  Math.log(1.1) / Math.log(1 + apy / 100 / 12)
+);
+```
+
+**Example:** At 9.5% APY, you'll reach +10% in ~13 months.
+
+## Output Display
+
+### Return Grid
+
+Four time periods with color-coded gains:
+
+```
+┌─────────────┬─────────────┐
+│ DAILY       │ WEEKLY      │
+│ +$0.65      │ +$4.55      │
+│ 2.50 STX    │ 17.50 STX   │
+├─────────────┼─────────────┤
+│ MONTHLY     │ YEARLY      │
+│ +$19.58     │ +$241.23    │
+│ 75.31 STX   │ 927.81 STX  │
+└─────────────┴─────────────┘
+```
+
+Each cell shows:
+- **USD value** in green (primary)
+- **Token equivalent** in muted text (STX or BTC)
+
+### APY Summary Card
+
+Highlights selected protocol:
+- Large APY percentage in Bitcoin orange
+- Protocol name and type
+- Risk badge (color-coded)
+- 2x2 grid of return projections
+
+### Compound Growth Chart
+
+12-month visualization using Recharts:
+
+```javascript
+const curve = Array.from({ length: 13 }, (_, i) => ({
+  month: i === 0 ? 'Now' : `M${i}`,
+  value: amount * Math.pow(1 + apy / 100 / 12, i)
+}));
+
+// Example output:
+// [{ month: 'Now', value: 1000 },
+//  { month: 'M1', value: 1007.92 },
+//  { month: 'M2', value: 1015.90 },
+//  ...
+//  { month: 'M12', value: 1099.56 }]
+```
+
+Chart features:
+- Bitcoin orange gradient fill
+- Interactive tooltips with exact values
+- Responsive to window size
+- Month labels (M1-M12)
+
+## Risk Indicators
+
+<Note>
+  Risk badges help you evaluate protocol safety:
+</Note>
+
+### Low Risk (Green)
+- Audited smart contracts
+- Established protocols (StackingDAO)
+- Conservative yields (5-10% APY)
+- High TVL (Total Value Locked)
+
+### Medium Risk (Orange)
+- Some audit coverage
+- Growing protocols (Velar, ALEX)
+- Moderate yields (10-15% APY)
+- Medium TVL
+
+### High Risk (Red)
+- New or unaudited contracts
+- Experimental protocols
+- High yields (15%+ APY)
+- Lower TVL
+
+<Warning>
+  **Higher APY = Higher Risk.** Always research protocols before investing. Use the [Protocol Comparison](/features/protocol-comparison) tool to check audits and TVL.
+</Warning>
+
+## Real-World Example
+
+### Scenario: 5,000 STX in StackingDAO
+
+**Input:**
+- Amount: `5000`
+- Asset: `STX`
+- Protocol: `StackingDAO`
+- APY: `9.5%`
+- Compound: `ON`
+
+**Output:**
+```
+Daily Return:    +$0.034 USD  (0.13 STX)
+Weekly Return:   +$0.238 USD  (0.92 STX)
+Monthly Return:  +$1.026 USD  (3.95 STX)
+Yearly Return:   +$12.65 USD  (48.65 STX)
+
+Break-even: ~13 months to reach +10%
+```
+
+**12-month growth:** $1,300 → $1,424.50 USD
+
+## Code Reference
+
+Key implementation files:
+- **Page:** `src/pages/YieldCalculator.jsx` - Main calculator UI
+- **Hook:** `src/hooks/useProtocolData.js` - Live APY data
+- **Service:** `src/services/defiLlamaService.js` - Protocol data fetching
+- **Formulas:** `src/pages/YieldCalculator.jsx:16-36` - Return calculations
+
+## Advanced Usage
+
+### Comparing Multiple Protocols
+
+<Tip>
+  **Strategy:** Calculate the same amount across 3-4 protocols to find the best risk/reward balance for your portfolio.
+</Tip>
+
+Example comparison for 1,000 STX:
+
+| Protocol | APY | Yearly Return | Risk |
+|----------|-----|---------------|------|
+| StackingDAO | 9.5% | +95 STX | Low |
+| Velar | 12% | +120 STX | Medium |
+| Zest | 15% | +150 STX | High |
+
+### Impact of Compounding
+
+Compounding dramatically increases returns over time:
+
+**Without Compounding (Simple Interest):**
+```
+$1,000 @ 10% APY for 1 year = $1,100 (+$100)
+```
+
+**With Daily Compounding:**
+```
+$1,000 @ 10% APY for 1 year = $1,105.16 (+$105.16)
+```
+
+The difference grows exponentially over longer periods:
+- 1 year: +5% more
+- 5 years: +28% more  
+- 10 years: +69% more
+
+### Mobile Optimization
+
+The calculator is fully responsive:
+- Input panel stacks on mobile (< 1024px)
+- Chart adjusts to screen width
+- Touch-friendly protocol selector buttons
+- Readable font sizes on small screens
+
+## Data Accuracy
+
+<Info>
+  APY data is fetched from **DefiLlama** every 5 minutes and represents current protocol rates. Actual yields may vary based on:
+  - Market conditions
+  - Protocol utilization
+  - Asset price volatility
+  - Smart contract performance
+</Info>
+
+Loading states show `…` while fetching:
+```javascript
+{loading && p.apy == null
+  ? <span>…</span>
+  : p.apyDisplay ?? '—'
+}
+```
+
+## Troubleshooting
+
+**APY shows "—" for some protocols:**
+- Protocol may not report APY to DefiLlama
+- Fallback to protocol's published rate (marked with `~`)
+- Check Protocol Comparison for manual verification
+
+**Chart not displaying:**
+- Ensure amount > 0
+- Check browser console for errors
+- Try selecting a different protocol
+- Recharts library must be loaded
+
+**Calculations seem off:**
+- Verify compound toggle state
+- USD conversion uses fixed prices (STX: $0.26, BTC: $68,000)
+- Large amounts may show rounding differences
+- Calculator assumes constant APY (real yields fluctuate)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Small" icon="seedling">
+    Test with 10% of intended investment to verify yields
+  </Card>
+  <Card title="Diversify" icon="chart-pie">
+    Don't put all funds in highest APY—balance risk
+  </Card>
+  <Card title="Monitor APY" icon="binoculars">
+    Rates change—recalculate monthly or when markets shift
+  </Card>
+  <Card title="Account for Fees" icon="hand-holding-dollar">
+    Calculator shows gross yield—subtract gas fees and protocol fees
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Protocol Comparison" icon="chart-bar" href="/features/protocol-comparison">
+    Compare all protocols side-by-side with TVL and audit status
+  </Card>
+  <Card title="AI Copilot" icon="robot" href="/features/ai-copilot">
+    Get AI-powered allocation recommendations
+  </Card>
+</CardGroup>

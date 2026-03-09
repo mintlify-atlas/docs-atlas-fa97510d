@@ -1,0 +1,351 @@
+---
+title: 'Stacking Tracker'
+description: 'Track STX stacking rewards via StackingDAO with live cycle progress and BTC earnings'
+icon: 'layer-group'
+---
+
+## Overview
+
+The Stacking Tracker monitors your STX stacking position on StackingDAO, displaying live cycle progress, earned rewards in both STX and BTC, and projected payouts. Stacking is Stacks' native consensus mechanism where you lock STX to earn Bitcoin yield (~9.5% APY).
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Live Cycle Progress" icon="chart-line">
+    Real-time tracking of current stacking cycle with visual progress bar
+  </Card>
+  <Card title="Dual Currency Rewards" icon="bitcoin">
+    See earnings in both STX and equivalent BTC value
+  </Card>
+  <Card title="Payout Projections" icon="calendar">
+    Next payout estimate with date and amount
+  </Card>
+  <Card title="Historical Earnings" icon="clock-rotate-left">
+    Complete record of past cycle payouts with status
+  </Card>
+</CardGroup>
+
+## How Stacking Works
+
+### The Basics
+
+**Stacking** is Stacks' Proof-of-Transfer consensus mechanism:
+
+1. **Lock STX** - Commit STX tokens for stacking cycles
+2. **Secure Bitcoin** - Your locked STX helps secure the Stacks blockchain
+3. **Earn BTC** - Receive Bitcoin rewards (~9.5% APY in STX value)
+4. **StackingDAO** - Liquid stacking via stSTX tokens (no 14-day lock)
+
+<Info>
+  Each stacking cycle lasts **~14 days** (2,100 Bitcoin blocks). Your STX remains accessible when stacking through StackingDAO.
+</Info>
+
+## Getting Started
+
+<Steps>
+  <Step title="Connect Your Wallet">
+    The tracker automatically detects your stacking position if you:
+    - Have STX in your connected wallet
+    - Are currently stacking via StackingDAO
+    - Have historical stacking activity
+  </Step>
+  
+  <Step title="View Stacking Stats">
+    Four key metrics display at the top:
+    
+    ```
+    ┌─────────────────┬──────────────────┐
+    │ Stacked STX     │ Total STX Earned │
+    │ 12,456 STX      │ 142.78 STX       │
+    ├─────────────────┼──────────────────┤
+    │ Total BTC Earned│ Cycles Completed │
+    │ 0.00034 BTC     │ 8 cycles         │
+    └─────────────────┴──────────────────┘
+    ```
+  </Step>
+  
+  <Step title="Monitor Cycle Progress">
+    The progress bar shows:
+    - Current cycle number (e.g., Cycle #24)
+    - Percentage complete (e.g., 68%)
+    - Estimated completion date
+    - Next payout amount in STX and USD
+  </Step>
+  
+  <Step title="Review Earnings History">
+    See past cycles with:
+    - Cycle number
+    - STX earned
+    - BTC equivalent value
+    - Payout date
+    - Payment status (Paid/Pending)
+  </Step>
+</Steps>
+
+## Data Structure
+
+The tracker uses data from your wallet and StackingDAO:
+
+```javascript
+const stackingData = {
+  stackedSTX: 12456.78,          // Total STX currently stacked
+  totalSTXEarned: 142.78,        // Lifetime STX rewards
+  totalBTCEarned: 0.00034,       // Lifetime BTC equivalent
+  cyclesCompleted: 8,            // Number of full cycles
+  currentCycle: 24,              // Active cycle number
+  cycleProgress: 68,             // % complete (0-100)
+  nextPayoutDays: 6,             // Days until next payout
+  nextPayoutSTX: 18.45,          // Projected next payout
+  nextPayoutDate: 'Mar 15, 2026',
+  earnings: [
+    {
+      cycle: 23,
+      stxEarned: 18.97,
+      btcValue: 0.000042,
+      date: 'Mar 1',
+      status: 'Paid'
+    },
+    // ...
+  ]
+};
+```
+
+## Live Cycle Tracking
+
+### Progress Visualization
+
+The cycle progress bar features:
+- **Dual-color gradient** - Orange to blue (Bitcoin to Stacks branding)
+- **Real-time percentage** - Updates as blocks are mined
+- **Smooth animations** - 700ms transition duration
+- **Cycle number badge** - Right-aligned current cycle ID
+
+```javascript
+// Progress bar implementation
+<div style={{ width: `${cycleProgress}%`, 
+             background: 'linear-gradient(90deg, #F7931A, #3B82F6)' }} />
+```
+
+### Next Payout Card
+
+Highlights upcoming rewards:
+
+<Note>
+  **Next Payout Estimate**  
+  **18.45 STX**  
+  ≈ $4.80 USD · Mar 15, 2026
+</Note>
+
+Calculation:
+```javascript
+// Estimated payout = (Stacked STX * APY) / cycles per year
+const nextPayoutSTX = (stackedSTX * 0.095) / 26;
+// 26 cycles per year (365 days / 14 days per cycle)
+```
+
+## Earnings Breakdown
+
+### Historical Payouts
+
+Each past cycle displays:
+
+```
+┌────────────────────────────────────┐
+│ Cycle #23                          │
+│ Mar 1                         Paid │
+│                                    │
+│ +18.97 STX    +0.000042 BTC        │
+└────────────────────────────────────┘
+```
+
+Color coding:
+- **Green** - STX earnings
+- **Orange** - BTC equivalent value
+- **Badge** - Payment status (Paid/Pending)
+
+### Total Earnings Row
+
+Bottom of earnings list shows aggregate:
+
+```
+TOTAL EARNED
++142.78 STX    +0.00034 BTC
+```
+
+## Live vs. Demo Data
+
+### Live Mode
+
+When connected with a real wallet:
+- Fetches actual stacking position from blockchain
+- Calculates rewards based on `stxBalance * 9.5% APY`
+- Projects future payouts using current cycle data
+- Shows real transaction history
+
+### Demo Mode
+
+Demo data showcases the UI with realistic values:
+
+```javascript
+const DEMO_STACKING = {
+  stackedSTX: 5000,
+  totalSTXEarned: 47.5,
+  totalBTCEarned: 0.000105,
+  cyclesCompleted: 5,
+  currentCycle: 6,
+  cycleProgress: 42,
+  nextPayoutDays: 8,
+  nextPayoutSTX: 9.13,
+  // ...
+};
+```
+
+## StackingDAO Integration
+
+### Why StackingDAO?
+
+<CardGroup cols={2}>
+  <Card title="Liquid Stacking" icon="droplet">
+    Get stSTX tokens—your STX isn't locked for 14 days
+  </Card>
+  <Card title="No Minimum" icon="infinity">
+    Stack any amount (solo stacking requires 100k+ STX)
+  </Card>
+  <Card title="Auto-Compounding" icon="arrows-rotate">
+    Rewards automatically re-stake for compound growth
+  </Card>
+  <Card title="9.5% APY" icon="percent">
+    Competitive yield paid in Bitcoin
+  </Card>
+</CardGroup>
+
+### How to Start Stacking
+
+<Steps>
+  <Step title="Visit StackingDAO">
+    Click **Visit StackingDAO ↗** at the bottom of the tracker page
+  </Step>
+  
+  <Step title="Deposit STX">
+    Choose amount to stack—receive stSTX 1:1
+  </Step>
+  
+  <Step title="Earn BTC">
+    Rewards accumulate every cycle (~14 days)
+  </Step>
+  
+  <Step title="Track in Staxiq">
+    Your position appears automatically in the Stacking Tracker
+  </Step>
+</Steps>
+
+## Reward Calculations
+
+### APY Breakdown
+
+**Base APY:** ~9.5% annually on your stacked STX value
+
+```javascript
+// Annual rewards
+const yearlyRewards = stackedSTX * 0.095;
+
+// Per cycle (26 cycles per year)
+const perCycleRewards = yearlyRewards / 26;
+
+// Example: 5,000 STX stacked
+// Yearly: 5000 * 0.095 = 475 STX
+// Per cycle: 475 / 26 = ~18.27 STX
+```
+
+### BTC Equivalents
+
+STX rewards shown in BTC value:
+
+```javascript
+const btcValue = (stxEarned * STX_PRICE) / BTC_PRICE;
+
+// Example:
+// 18.27 STX * $0.26 / $68,000 = 0.000070 BTC
+```
+
+<Tip>
+  **Note:** BTC values are calculated using STX/USD price. Actual BTC rewards from StackingDAO are distributed in BTC directly.
+</Tip>
+
+## Code Reference
+
+Key implementation files:
+- **Page:** `src/pages/StackingTracker.jsx` - Main UI and logic
+- **Hook:** `src/hooks/usePortfolio.js` - STX balance fetching
+- **Constants:** `src/pages/StackingTracker.jsx:7-9` - Cycle duration and prices
+- **Demo Data:** `src/data/demoData.js` - Sample stacking data
+
+## Advanced Features
+
+### Cycle Date Projection
+
+Next payout date calculated from current date + cycle duration:
+
+```javascript
+function getNextCycleDate() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + CYCLE_DURATION_DAYS);
+  return next.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+}
+```
+
+### Responsive Design
+
+Layout adapts across devices:
+- **Mobile (< 768px):** 2-column stat grid, stacked panels
+- **Tablet (768-1024px):** 4-column stats, side-by-side panels
+- **Desktop (> 1024px):** Full layout with side-by-side cycle + earnings
+
+## Troubleshooting
+
+**No stacking data appears:**
+- Ensure you're stacking via StackingDAO
+- Solo stacking won't appear (StackingDAO integration only)
+- Connect the wallet used for stacking
+
+**Payout amounts seem incorrect:**
+- Projections are estimates based on current APY
+- Actual yields vary by Bitcoin miner participation
+- StackingDAO rewards fluctuate with protocol performance
+
+**Demo mode stuck:**
+- Click **Connect Real Wallet** banner at top
+- Demo persists until real wallet connected
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Long-Term Holds" icon="hourglass">
+    Stacking works best for 6+ month holds—rewards compound over time
+  </Card>
+  <Card title="Monitor Cycles" icon="calendar-check">
+    Check tracker at cycle boundaries to verify payouts
+  </Card>
+  <Card title="Reinvest Rewards" icon="rotate">
+    Use earned STX to increase stacking position
+  </Card>
+  <Card title="Compare Yields" icon="scale-balanced">
+    Use Yield Calculator to compare stacking vs. other protocols
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Yield Calculator" icon="calculator" href="/features/yield-calculator">
+    Model stacking returns before committing STX
+  </Card>
+  <Card title="Portfolio Tracking" icon="wallet" href="/features/portfolio-tracking">
+    Monitor total portfolio including stacked STX
+  </Card>
+</CardGroup>
